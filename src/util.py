@@ -21,7 +21,7 @@ def boardFromFEN(FEN):
     for row in piecesByRow:
         x = 0
 
-        for piece in piecesByRow:
+        for piece in row:
             if piece.isdigit():
                 x += int(piece)
             else:
