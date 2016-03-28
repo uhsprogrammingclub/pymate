@@ -7,6 +7,7 @@ import board
 from board import Board
 from board import Side
 
+
 def boardFromFEN(FEN):
     newBoard = Board()
     subFEN = FEN.split(" ")
@@ -49,28 +50,32 @@ def boardFromFEN(FEN):
     newBoard.sideToMove = Side.W if sideToMove == "w" else Side.B
     for c in castlingRights:
         if c == 'K':
-            castlingRights |= board.WKCA
+            newBoard.castleRights |= board.WKCA
         elif c == "Q":
-            castlingRights |= board.WQCA
+            newBoard.castleRights |= board.WQCA
         elif c == "k":
-            castlingRights |= board.BKCA
+            newBoard.castleRights |= board.BKCA
         elif c == "q":
-            castlingRights |= board.BQCA
+            newBoard.castleRights |= board.BQCA
     newBoard.EPTarget = stringToCoord(enPassantTarget)
     newBoard.halfMoveClock = halfMoveClock
     newBoard.fullMoveCounter = fullMoveCounter
     return newBoard
 
+
 def indexToBit(index):
     bit = 1 << index
     return bit
 
+
 def coordToIndex(coord):
-    index = coord[1]*8+coord[0]
+    index = coord[1] * 8 + coord[0]
     return index
+
 
 def coordToBit(coord):
     return indexToBit(coordToIndex(coord))
+
 
 def stringToCoord(loc):
     if len(loc) != 2:
