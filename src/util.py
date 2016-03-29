@@ -29,21 +29,21 @@ def boardFromFEN(FEN):
                 pieceIsUpperCase = piece != piece.lower()
                 piece = piece.lower()
                 if piece == 'p':
-                    newBoard.pieceBitBoards[board.PAWNS] |= coordToBit((x, y))
+                    newBoard.pieceBitBoards[board.PAWNS] |= asBit((x, y))
                 elif piece == 'n':
-                    newBoard.pieceBitBoards[board.KNIGHTS] |= coordToBit((x, y))
+                    newBoard.pieceBitBoards[board.KNIGHTS] |= asBit((x, y))
                 elif piece == 'b':
-                    newBoard.pieceBitBoards[board.BISHOPS] |= coordToBit((x, y))
+                    newBoard.pieceBitBoards[board.BISHOPS] |= asBit((x, y))
                 elif piece == 'r':
-                    newBoard.pieceBitBoards[board.ROOKS] |= coordToBit((x, y))
+                    newBoard.pieceBitBoards[board.ROOKS] |= asBit((x, y))
                 elif piece == 'k':
-                    newBoard.pieceBitBoards[board.KINGS] |= coordToBit((x, y))
+                    newBoard.pieceBitBoards[board.KINGS] |= asBit((x, y))
                 elif piece == 'q':
-                    newBoard.pieceBitBoards[board.QUEENS] |= coordToBit((x, y))
+                    newBoard.pieceBitBoards[board.QUEENS] |= asBit((x, y))
                 if pieceIsUpperCase:
-                    newBoard.pieceBitBoards[board.WHITE] |= coordToBit((x, y))
+                    newBoard.pieceBitBoards[board.WHITE] |= asBit((x, y))
                 else:
-                    newBoard.pieceBitBoards[board.BLACK] |= coordToBit((x, y))
+                    newBoard.pieceBitBoards[board.BLACK] |= asBit((x, y))
                 x += 1
         y -= 1
 
@@ -57,29 +57,82 @@ def boardFromFEN(FEN):
             newBoard.castleRights |= board.BKCA
         elif c == "q":
             newBoard.castleRights |= board.BQCA
-    newBoard.EPTarget = stringToCoord(enPassantTarget)
+    newBoard.EPTarget = asCoord(enPassantTarget)
     newBoard.halfMoveClock = halfMoveClock
     newBoard.fullMoveCounter = fullMoveCounter
     return newBoard
 
 
-def indexToBit(index):
-    bit = 1 << index
-    return bit
-
-
-def coordToIndex(coord):
+def asIndex(coord):
     index = coord[1] * 8 + coord[0]
     return index
 
 
-def coordToBit(coord):
-    return indexToBit(coordToIndex(coord))
+def asBit(coord):
+    if type(coord) is tuple:
+        asBit(asIndex(coord))
+    elif type(coord) is int:
+        return 1 << coord
 
 
-def stringToCoord(loc):
-    if len(loc) != 2:
-        return None
-    x = ord(loc[0].upper()) - 65
-    y = int(loc[1]) - 1
-    return (x, y)
+def asCoord(loc):
+    if type(loc) is str:
+        if len(loc) != 2:
+            return None
+        x = ord(loc[0].upper()) - 65
+        y = int(loc[1]) - 1
+        return (x, y)
+    elif type(loc) is int:
+        x = loc % 8
+        y = (loc - x) / 8
+        return (x, y)
+
+
+def coordToString(coord):
+    letter = chr(coord[0] + 65).lower()
+    number = str(coord[1] + 1)
+    return letter + number
+
+
+def up(bb, num=1):
+    return bb << 8 * num
+
+
+def down(bb, num=1):
+    return bb >> 8 * num
+
+
+def right(bb, num=1):
+    return bb << num & ~board.FILE_A
+
+
+def left(bb, num=1):
+    return bb >> num & ~board.FILE_H
+
+
+def upRight(bb):
+    return up(right(bb))
+
+
+def upLeft(bb):
+    return up(left(bb))
+
+
+def downRight(bb):
+    return down(right(bb))
+
+
+def downLeft(bb):
+    return down(left(bb))
+
+
+def getPieceAtIndex(gameBoard, index):
+    bit = asBit(index)
+    piece = None
+    if gameBoard.pieceBitBoards[board.WHITE] & bit != 0 or gameBoard.pieceBitBoards[board.BLACK] & bit != 0:
+        for bbIndex in range(board.PAWNS, 8):
+            if gameBoard.pieceBitBoards[bbIndex] & bit != 0:
+                piece = board.pieceStringMap[bbIndex]
+        if gameBoard.pieceBitBoards[board.WHITE] & bit != 0:
+            piece = piece.upper()
+    return piece
