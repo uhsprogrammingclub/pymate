@@ -69,6 +69,10 @@ class Board:
         return pieceList
 
     def makeMove(self, move):
+        undo = Undo(move=move, board=self)
+        self.history.append(undo)
+        self.halfMoveClock += 1
+        move.movingPiece = util.getPieceAtIndex(self, move.fromSqr)
         move.capturedPiece = util.getPieceAtIndex(self, move.toSqr)
         self.movePiece(move.fromSqr, move.toSqr)
         if move.promotion is not None:
@@ -77,7 +81,78 @@ class Board:
             else:
                 self.addPiece(move.promotion, move.toSqr)
 
+        if move.capturedPiece is not None:
+            self.halfMoveClock = 0
+
+        if move.movingPiece.lower() == "p":
+            self.halfMoveClock = 0
+            # Handle en passant
+            if move.fromSqr[0] != move.toSqr[0] and move.capturedPiece is None:
+                self.clearSquare(self.EPTarget)
+                move.EPMove = True
+            if abs(move.fromSqr[1] - move.toSqr[1]) > 1:
+                self.EPTarget = move.toSqr
+            else:
+                self.EPTarget = None
+        else:
+            self.EPTarget = None
+
+        # handle castling
+        if move.movingPiece.lower() == "k":
+            self.castleRights &= ~(WKCA | WQCA) if self.sideToMove == WHITE else ~(BKCA | BQCA)
+            for y in [0, 7]:
+                if move.fromSqr == (4, y):
+                    if move.toSqr == (6, y):
+                        self.movePiece((7, y), (5, y))
+                        move.castling = True
+                    elif move.toSqr == (2, y):
+                        self.movePiece((0, y), (3, y))
+                        move.castling = True
+
+        if move.movingPiece == "R":
+            if move.fromSqr == (0, 0):
+                self.castleRights &= ~WQCA
+            elif move.fromSqr == (7, 0):
+                self.castleRights &= ~WKCA
+        elif move.movingPiece == "r":
+            if move.fromSqr == (0, 7):
+                self.castleRights &= ~BQCA
+            elif move.fromSqr == (7, 7):
+                self.castleRights &= ~BKCA
+
         self.sideToMove = Side.other(self.sideToMove)
+
+    def takeMove(self):
+        if len(self.history) == 0:
+            return
+        undo = self.history.pop()
+        move = undo.move
+        self.halfMoveClock = undo.halfMoveClock
+        self.EPTarget = undo.EPTarget
+        self.castleRights = undo.castleRights
+        self.sideToMove = Side.other(self.sideToMove)
+
+        self.movePiece(move.toSqr, move.fromSqr)
+
+        if move.promotion is not None:
+            if self.sideToMove == Side.W:
+                self.addPiece("P", move.fromSqr)
+            else:
+                self.addPiece("p", move.fromSqr)
+        if move.capturedPiece is not None:
+            self.addPiece(move.capturedPiece, move.toSqr)
+        if move.EPMove:
+            if self.sideToMove == Side.W:
+                self.addPiece("p", self.EPTarget)
+            else:
+                self.addPiece("P", self.EPTarget)
+        if move.castling:
+            for y in [0, 7]:
+                if move.fromSqr == (4, y):
+                    if move.toSqr == (6, y):
+                        self.movePiece((5, y), (7, y))
+                    elif move.toSqr == (2, y):
+                        self.movePiece((3, y), (0, y))
 
     def clearSquare(self, coord):
         coord = util.asIndex(coord)
@@ -102,7 +177,6 @@ class Board:
         for i in range(8):
             self.pieceBitBoards[i] &= clearMask[coordTo]
             if self.pieceBitBoards[i] | bitFrom == self.pieceBitBoards[i]:
-                print "Moving"
                 self.pieceBitBoards[i] &= clearMask[coordFrom]
                 self.pieceBitBoards[i] |= bitTo
 
@@ -112,11 +186,11 @@ class Undo:
         self.move = move
         if board is None:
             self.castleRights = castleRights
-            self.EPTarget = tuple(EPTarget)
+            self.EPTarget = EPTarget
             self.halfMoveClock = halfMoveClock
         else:
             self.castleRights = board.castleRights
-            self.EPTarget = tuple(board.EPTarget)
+            self.EPTarget = board.EPTarget
             self.halfMoveClock = board.halfMoveClock
 
 
@@ -128,6 +202,8 @@ class Move:
         if promotion is not None:
             self.promotion = promotion.lower()
         self.capturedPiece = None
+        self.castling = False
+        self.EPMove = False
 
     def uci(self):
         uci = util.asSANSqr(self.fromSqr) + util.asSANSqr(self.toSqr)

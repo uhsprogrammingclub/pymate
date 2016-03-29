@@ -7,9 +7,11 @@ import board
 def takePlayerMove():
     print gameBoard
     move = input("Enter the next move:")
-    move = Move.fromUCI(move)
-    print move.uci()
-    gameBoard.makeMove(move)
+    if move == "undo":
+        gameBoard.takeMove()
+    else:
+        move = Move.fromUCI(move)
+        gameBoard.makeMove(move)
     takePlayerMove()
 
 
