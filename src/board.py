@@ -18,7 +18,7 @@ FILE_H = 0x8080808080808080
 LEFT_HALF = 0xF0F0F0F0F0F0F0F0
 
 WHITE, BLACK, PAWNS, KNIGHTS, BISHOPS, ROOKS, QUEENS, KINGS = 0, 1, 2, 3, 4, 5, 6, 7
-pieceStringMap = {PAWNS: 'p', KNIGHTS: 'n', BISHOPS: 'b', ROOKS: 'r', QUEENS: 'q', KINGS: 'k'}
+pieceStringMap = {WHITE: 'white', BLACK: 'black', PAWNS: 'p', KNIGHTS: 'n', BISHOPS: 'b', ROOKS: 'r', QUEENS: 'q', KINGS: 'k'}
 pieceBoardMap = {'p': PAWNS, 'n': KNIGHTS, 'b': BISHOPS, 'r': ROOKS, 'q': QUEENS, 'k': KINGS}
 
 WKCA, WQCA, BKCA, BQCA = 1, 2, 4, 8
@@ -54,10 +54,12 @@ class Board:
     def __str__(self):
         pieceList = self.asList()
         string = ''
-        for i in reversed(range(64)):
-            string += "|" + UNICODE_PIECES[pieceList[i]]
-            if i % 8 == 0:
-                string += "|\n"
+        for y in reversed(range(8)):
+            string += str(y + 1)
+            for x in range(8):
+                string += "|" + UNICODE_PIECES[pieceList[y * 8 + x]]
+            string += "|\n"
+        string += "  a b c d e f g h "
         return string.encode('utf-8')
 
     def asList(self):
@@ -67,10 +69,15 @@ class Board:
         return pieceList
 
     def makeMove(self, move):
-        fromBit = util.asBit(move.fromSqr)
-        toBit = util.asBit(move.toSqr)
+        move.capturedPiece = util.getPieceAtIndex(self, move.toSqr)
+        self.movePiece(move.fromSqr, move.toSqr)
+        if move.promotion is not None:
+            if self.sideToMove == Side.W:
+                self.addPiece(move.promotion.upper(), move.toSqr)
+            else:
+                self.addPiece(move.promotion, move.toSqr)
 
-        capturedPiece = util.getPieceAtIndex(self, move.toSqr)
+        self.sideToMove = Side.other(self.sideToMove)
 
     def clearSquare(self, coord):
         coord = util.asIndex(coord)
@@ -85,6 +92,19 @@ class Board:
             self.pieceBitBoards[WHITE] |= bit
         else:
             self.pieceBitBoards[BLACK] |= bit
+
+    def movePiece(self, coordFrom, coordTo):
+        coordFrom = util.asIndex(coordFrom)
+        coordTo = util.asIndex(coordTo)
+        bitFrom = util.asBit(coordFrom)
+        bitTo = util.asBit(coordTo)
+
+        for i in range(8):
+            self.pieceBitBoards[i] &= clearMask[coordTo]
+            if self.pieceBitBoards[i] | bitFrom == self.pieceBitBoards[i]:
+                print "Moving"
+                self.pieceBitBoards[i] &= clearMask[coordFrom]
+                self.pieceBitBoards[i] |= bitTo
 
 
 class Undo:
@@ -104,10 +124,13 @@ class Move:
     def __init__(self, fromSqr=(0, 0), toSqr=(0, 0), promotion=None):
         self.toSqr = tuple(toSqr)
         self.fromSqr = tuple(fromSqr)
-        self.promotion = promotion.lower()
+        self.promotion = promotion
+        if promotion is not None:
+            self.promotion = promotion.lower()
+        self.capturedPiece = None
 
     def uci(self):
-        uci = util.coordToString(self.fromSqr) + util.coordToString(self.toSqr)
+        uci = util.asSANSqr(self.fromSqr) + util.asSANSqr(self.toSqr)
         if self.promotion is not None:
             uci += self.promotion
         return uci
@@ -117,16 +140,16 @@ class Move:
         if len(uci) != 4 and len(uci) != 5:
             return None
         fromSqr = util.asCoord(uci[0:2])
-        toSqr = util.asCoord(uci[2:5])
+        toSqr = util.asCoord(uci[2:4])
         promotion = None
         if len(uci) == 5:
-            promotion = uci[5]
+            promotion = uci[4]
         return Move(fromSqr=fromSqr, toSqr=toSqr, promotion=promotion)
 
 
 def initPresets():
     for i in range(64):
-        setMask[i] = util.asBit(i)
+        setMask[i] = 1 << i
         clearMask[i] = ~setMask[i]
         kingAttack = setMask[i] | util.right(setMask[i]) | util.left(setMask[i])
         kingAttack |= util.up(kingAttack) | util.down(kingAttack)
@@ -141,4 +164,3 @@ def initPresets():
         h2 = l1 | r1
 
         knightAttacks[i] = util.up(h1) | util.down(h1) | util.up(h2, 2) | util.down(h2, 2)
-initPresets()

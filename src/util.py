@@ -64,15 +64,17 @@ def boardFromFEN(FEN):
 
 
 def asIndex(coord):
-    index = coord[1] * 8 + coord[0]
-    return index
+    if type(coord) is tuple:
+        return coord[1] * 8 + coord[0]
+    return coord
 
 
 def asBit(coord):
-    if type(coord) is tuple:
-        asBit(asIndex(coord))
+    if type(coord) == tuple:
+        return asBit(asIndex(coord))
     elif type(coord) is int:
-        return 1 << coord
+        return board.setMask[coord]
+    return coord
 
 
 def asCoord(loc):
@@ -86,9 +88,11 @@ def asCoord(loc):
         x = loc % 8
         y = (loc - x) / 8
         return (x, y)
+    return loc
 
 
-def coordToString(coord):
+def asSANSqr(coord):
+    coord = asCoord(coord)
     letter = chr(coord[0] + 65).lower()
     number = str(coord[1] + 1)
     return letter + number
@@ -136,3 +140,15 @@ def getPieceAtIndex(gameBoard, index):
         if gameBoard.pieceBitBoards[board.WHITE] & bit != 0:
             piece = piece.upper()
     return piece
+
+
+def bbAsString(bb):
+    string = ""
+    for y in reversed(range(8)):
+        for x in range(8):
+            if bb & 1 << (x + y * 8) != 0:
+                string += "X "
+            else:
+                string += "- "
+        string += "\n"
+    return string
