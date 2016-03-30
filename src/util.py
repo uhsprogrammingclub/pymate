@@ -7,6 +7,9 @@ import board
 from board import Board
 from board import Side
 
+setMask = [0] * 64
+clearMask = [0] * 64
+
 
 def boardFromFEN(FEN):
     newBoard = Board()
@@ -28,18 +31,9 @@ def boardFromFEN(FEN):
             else:
                 pieceIsUpperCase = piece != piece.lower()
                 piece = piece.lower()
-                if piece == 'p':
-                    newBoard.pieceBitBoards[board.PAWNS] |= asBit((x, y))
-                elif piece == 'n':
-                    newBoard.pieceBitBoards[board.KNIGHTS] |= asBit((x, y))
-                elif piece == 'b':
-                    newBoard.pieceBitBoards[board.BISHOPS] |= asBit((x, y))
-                elif piece == 'r':
-                    newBoard.pieceBitBoards[board.ROOKS] |= asBit((x, y))
-                elif piece == 'k':
-                    newBoard.pieceBitBoards[board.KINGS] |= asBit((x, y))
-                elif piece == 'q':
-                    newBoard.pieceBitBoards[board.QUEENS] |= asBit((x, y))
+                pieceBoardMap = {'p': board.PAWNS, 'n': board.KNIGHTS, 'b': board.BISHOPS,
+                                 'r': board.ROOKS, 'q': board.QUEENS, 'k': board.KINGS}
+                newBoard.pieceBitBoards[pieceBoardMap[piece]] |= asBit((x, y))
                 if pieceIsUpperCase:
                     newBoard.pieceBitBoards[board.WHITE] |= asBit((x, y))
                 else:
@@ -73,7 +67,7 @@ def asBit(coord):
     if type(coord) == tuple:
         return asBit(asIndex(coord))
     elif type(coord) is int:
-        return board.setMask[coord]
+        return setMask[coord]
     return coord
 
 
@@ -140,6 +134,42 @@ def getPieceAtIndex(gameBoard, index):
         if gameBoard.pieceBitBoards[board.WHITE] & bit != 0:
             piece = piece.upper()
     return piece
+
+
+def clearBit(bb, index):
+    """
+    Clears the bit at a given index in a passed bit board
+    """
+    bb &= clearMask[index]
+    return bb
+
+
+def ffs(bb):
+    """
+    Finds the next set bit in the passed bit board (name short for 'find first set')
+    NOTE: Perhaps use gmpy library (4x faster)?
+    """
+    assert bb != 0
+
+    i = 0
+    while (bb % 2) == 0:
+        i += 1
+        bb = bb >> 1
+    return i
+
+
+def getSetBits(bb):
+    """
+    Returns a list of the indexes of the set bits in the passed bit board
+    """
+    setBits = []
+    i = 0
+    while bb != 0:
+        index = ffs(bb)
+        setBits[i] = index
+        bb = clearBit(bb, index)
+        i += 1
+    return setBits
 
 
 def bbAsString(bb):

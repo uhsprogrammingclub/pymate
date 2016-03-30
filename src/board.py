@@ -6,11 +6,6 @@ Created on Mar 22, 2016
 '''
 import util
 
-setMask = [0] * 64
-clearMask = [0] * 64
-kingAttacks = [0] * 64
-knightAttacks = [0] * 64
-
 RANK_1 = 0x00000000000000FF
 RANK_8 = 0xFF00000000000000
 FILE_A = 0x0101010101010101
@@ -157,7 +152,7 @@ class Board:
     def clearSquare(self, coord):
         coord = util.asIndex(coord)
         for i in range(8):
-            self.pieceBitBoards[i] &= clearMask[coord]
+            self.pieceBitBoards[i] &= util.clearMask[coord]
 
     def addPiece(self, piece, coord):
         bit = util.asBit(coord)
@@ -175,9 +170,9 @@ class Board:
         bitTo = util.asBit(coordTo)
 
         for i in range(8):
-            self.pieceBitBoards[i] &= clearMask[coordTo]
+            self.pieceBitBoards[i] &= util.clearMask[coordTo]
             if self.pieceBitBoards[i] | bitFrom == self.pieceBitBoards[i]:
-                self.pieceBitBoards[i] &= clearMask[coordFrom]
+                self.pieceBitBoards[i] &= util.clearMask[coordFrom]
                 self.pieceBitBoards[i] |= bitTo
 
 
@@ -221,22 +216,3 @@ class Move:
         if len(uci) == 5:
             promotion = uci[4]
         return Move(fromSqr=fromSqr, toSqr=toSqr, promotion=promotion)
-
-
-def initPresets():
-    for i in range(64):
-        setMask[i] = 1 << i
-        clearMask[i] = ~setMask[i]
-        kingAttack = setMask[i] | util.right(setMask[i]) | util.left(setMask[i])
-        kingAttack |= util.up(kingAttack) | util.down(kingAttack)
-        kingAttacks[i] = kingAttack & clearMask[i]
-
-        l1 = util.left(setMask[i])
-        l2 = util.left(setMask[i], 2)
-        r1 = util.right(setMask[i])
-        r2 = util.right(setMask[i], 2)
-
-        h1 = l2 | r2
-        h2 = l1 | r1
-
-        knightAttacks[i] = util.up(h1) | util.down(h1) | util.up(h2, 2) | util.down(h2, 2)
