@@ -27,7 +27,7 @@ def generatePsuedoMoves(state):
     knightSquares = getSetBits(side & state.pieceBitBoards[KNIGHTS])
 
     for index in knightSquares:
-        knightMoves = getSetBits(knightAttacks[asBit(index)] & ~side)
+        knightMoves = getSetBits(knightAttacks[index] & ~side)
         filter(lambda x: (asCoord(index), asCoord(x)), knightMoves)
         moves.extend(knightMoves)
 

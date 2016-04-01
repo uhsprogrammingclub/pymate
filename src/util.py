@@ -93,35 +93,39 @@ def asSANSqr(coord):
 
 
 def up(bb, num=1):
-    return bb << 8 * num
+    return bb << 8 * num & board.FULL_BOARD
 
 
 def down(bb, num=1):
-    return bb >> 8 * num
+    return bb >> 8 * num & board.FULL_BOARD
 
 
 def right(bb, num=1):
-    return bb << num & ~board.FILE_A
+    if num == 0:
+        return bb
+    return bb << num & ~(board.FILE_A | right(board.FILE_A, num - 1)) & board.FULL_BOARD
 
 
 def left(bb, num=1):
-    return bb >> num & ~board.FILE_H
+    if num == 0:
+        return bb
+    return bb >> num & ~(board.FILE_H | left(board.FILE_H, num - 1)) & board.FULL_BOARD
 
 
 def upRight(bb):
-    return up(right(bb))
+    return up(right(bb)) & board.FULL_BOARD
 
 
 def upLeft(bb):
-    return up(left(bb))
+    return up(left(bb)) & board.FULL_BOARD
 
 
 def downRight(bb):
-    return down(right(bb))
+    return down(right(bb)) & board.FULL_BOARD
 
 
 def downLeft(bb):
-    return down(left(bb))
+    return down(left(bb)) & board.FULL_BOARD
 
 
 def getPieceAtIndex(gameBoard, index):
@@ -144,6 +148,13 @@ def clearBit(bb, index):
     return bb
 
 
+def lsb(x):
+    """
+    Find the last set bit in a binary value
+    """
+    return (x & -x).bit_length() - 1
+
+
 def ffs(bb):
     """
     Finds the next set bit in the passed bit board (name short for 'find first set')
@@ -163,12 +174,13 @@ def getSetBits(bb):
     Returns a list of the indexes of the set bits in the passed bit board
     """
     setBits = []
-    i = 0
+    print bb
+    print bbAsString(bb)
     while bb != 0:
-        index = ffs(bb)
-        setBits[i] = index
+        index = lsb(bb)
+        print index
+        setBits.append(index)
         bb = clearBit(bb, index)
-        i += 1
     return setBits
 
 

@@ -8,6 +8,7 @@ import util
 
 RANK_1 = 0x00000000000000FF
 RANK_8 = 0xFF00000000000000
+FULL_BOARD = 0xFFFFFFFFFFFFFFFF
 FILE_A = 0x0101010101010101
 FILE_H = 0x8080808080808080
 LEFT_HALF = 0xF0F0F0F0F0F0F0F0
@@ -205,6 +206,27 @@ class Move:
         if self.promotion is not None:
             uci += self.promotion
         return uci
+
+    def __repr__(self):
+        return self.uci()
+
+    def __str__(self):
+        return self.uci()
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if self.fromSqr != other.fromSqr:
+                return False
+            elif self.toSqr != other.toSqr:
+                return False
+            elif self.promotion != other.promotion:
+                return False
+            return True
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     @staticmethod
     def fromUCI(uci):
