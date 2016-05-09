@@ -176,6 +176,9 @@ class Board:
                 self.pieceBitBoards[i] &= util.clearMask[coordFrom]
                 self.pieceBitBoards[i] |= bitTo
 
+    def allPieces(self):
+        return self.pieceBitBoards[WHITE] | self.pieceBitBoards[BLACK]
+
 
 class Undo:
     def __init__(self, move=None, castleRights=None, EPTarget=None, halfMoveClock=None, board=None):
