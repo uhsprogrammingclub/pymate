@@ -181,6 +181,14 @@ def getSetBits(bb):
     return setBits
 
 
+def countSetBits(bb):
+    set = 0
+    while bb != 0:
+        bb &= (bb - 1)
+        set += 1
+    return set
+
+
 def bbAsString(bb):
     string = ""
     for y in reversed(range(8)):
