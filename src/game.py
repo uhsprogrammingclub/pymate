@@ -8,7 +8,7 @@ import movegenerator
 def takePlayerMove():
     print gameBoard
     pseudoMoves = movegenerator.generatePsuedoMoves(gameBoard)
-    print pseudoMoves
+    print "Possible moves: ", pseudoMoves
     move = input("Enter the next move:")
     if move == "undo":
         gameBoard.takeMove()

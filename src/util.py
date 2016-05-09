@@ -148,7 +148,7 @@ def clearBit(bb, index):
     return bb
 
 
-def lsb(x):
+def lastSetBit(x):
     """
     Find the last set bit in a binary value
     """
@@ -174,11 +174,8 @@ def getSetBits(bb):
     Returns a list of the indexes of the set bits in the passed bit board
     """
     setBits = []
-    print bb
-    print bbAsString(bb)
     while bb != 0:
-        index = lsb(bb)
-        print index
+        index = lastSetBit(bb)
         setBits.append(index)
         bb = clearBit(bb, index)
     return setBits

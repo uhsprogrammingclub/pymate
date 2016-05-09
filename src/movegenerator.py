@@ -18,9 +18,9 @@ def generatePsuedoMoves(state):
     side = state.pieceBitBoards[WHITE] if state.sideToMove == Side.W else state.pieceBitBoards[BLACK]
 
     # King Moves
-    kingSquare = asCoord(kingAttacks[side & state.pieceBitBoards[KINGS]])
-    kingMoves = getSetBits(kingAttacks[side & state.pieceBitBoards[KINGS]] & ~side)
-    filter(lambda x: (kingSquare, asCoord(x)), kingMoves)
+    kingIndex = lastSetBit(side & state.pieceBitBoards[KINGS])
+    kingMoves = getSetBits(kingAttacks[kingIndex] & ~side)
+    kingMoves = map(lambda x: (asCoord(kingIndex), asCoord(x)), kingMoves)
     moves.extend(kingMoves)
 
     # Knight Moves
@@ -28,8 +28,11 @@ def generatePsuedoMoves(state):
 
     for index in knightSquares:
         knightMoves = getSetBits(knightAttacks[index] & ~side)
-        filter(lambda x: (asCoord(index), asCoord(x)), knightMoves)
+        knightMoves = map(lambda x: (asCoord(index), asCoord(x)), knightMoves)
         moves.extend(knightMoves)
+
+    moves = map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), moves)
+    return moves
 
 
 def initPresets():
