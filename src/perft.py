@@ -40,7 +40,6 @@ class TestSequenceFunctions(unittest.TestCase):
             depths = []
             for i in range(len(strSplit) - 1):
                 depths.append(strSplit[i + 1][3:].replace("\n", ""))
-            print depths
 
             b = util.boardFromFEN(FEN)
 
@@ -61,7 +60,7 @@ class TestSequenceFunctions(unittest.TestCase):
                     print "Move:", moveNum, move, self.leafNodes - oldNodes
 
                 print "Leaf nodes: %d, expected: %s" % (self.leafNodes, depths[i - 1])
-                self.assertEqual(depths[i - 1], self.leafNodes, "Depth %d : %s" % (i, FEN))
+                self.assertEqual(int(depths[i - 1]), self.leafNodes, "Depth %d : %s" % (i, FEN))
 
         c = tStart - datetime.now()
         print "PERFT test finished successfully in %d minutes" % c.minutes
