@@ -181,6 +181,10 @@ class Board:
     def allPieces(self):
         return self.pieceBitBoards[WHITE] | self.pieceBitBoards[BLACK]
 
+    def kingPos(self, side):
+        friendlyBB = self.pieceBitBoards[WHITE] if side == Side.W else self.pieceBitBoards[BLACK]
+        return util.lastSetBit(friendlyBB & self.pieceBitBoards[KINGS])
+
     def canCastle(self, side, kSide):
         if self.isInCheck(side):
             return False
@@ -205,11 +209,78 @@ class Board:
             return True
 
     def isInCheck(self, side):
-        friendlyBB = self.pieceBitBoards[WHITE] if side == Side.W else self.pieceBitBoards[BLACK]
-        if movegenerator.attacksTo(util.lastSetBit(friendlyBB & self.pieceBitBoards[KINGS]), self, side) == 0:
+        if movegenerator.attacksTo(self.kingPos(side), self, side) == 0:
             return False
         else:
             return True
+
+    def isLegalMove(self, move):
+        sideToMove = self.sideToMove
+        fromPos = util.asIndex(move.fromSqr)
+        toPos = util.asIndex(move.toSqr)
+        kingPos = self.kingPos(sideToMove)
+
+        if self.isInCheck(sideToMove):
+
+            # if the king is moving check if the to square is under attack
+            if fromPos == kingPos:
+                if movegenerator.attacksTo(toPos, self, sideToMove) == 0:
+                    return True
+                else:
+                    return False
+            else:
+
+                # If double check, only the king can move
+                attacksToKing = movegenerator.attacksTo(kingPos, self, sideToMove)
+                if util.countSetBits(attacksToKing) > 1:
+                    return False
+                attackingPos = util.lastSetBit(attacksToKing)
+
+                # if a knight is attacking, then king has to move
+                if self.pieceBitBoards[KNIGHTS] & util.toBit(attackingPos) != 0:
+                    return False
+
+                # If its a capture move and the capturing piece is not absolutely pinned, move is legal
+                if attackingPos == toPos and self.isAbsolutePin(fromPos, sideToMove):
+                    return True
+
+                # try the move to see if the move will block the check
+                self.makeMove(move)
+                inCheck = self.isInCheck(sideToMove)
+                self.takeMove(move)
+                if inCheck:
+                    return False
+                else:
+                    return True
+
+        else:
+            # check that the moving piece is not absolutely pinned
+            if not self.isAbsolutePin(fromPos, sideToMove):
+                EPMove = False
+                if self.movingPiece.lower() == "p":
+                    if self.fromSqr[0] != self.toSqr[0] and util.getPieceAtIndex(self, move.toSqr) is None:
+                        EPMove = True
+                if EPMove is False:
+                    return True
+
+            # if piece is pinned, try the move and see if it results in the king being in check
+            self.makeMove(move)
+            inCheck = self.isInCheck(sideToMove)
+            self.takeMove(move)
+            if inCheck:
+                return False
+            else:
+                return True
+
+    def isAbsolutePin(self, pinnedPiece, side):
+        pinnedPiece = util.asIndex(pinnedPiece)
+        numOfAttacksWithPin = util.countSetBits(movegenerator.attacksTo(self.kingPos(side), self, side))
+        bbWithoutPin = self.allPieces ^ util.asBit(pinnedPiece)
+        numOfAttacksWithoutPin = util.countSetBits(movegenerator.attacksTo(self.kingPos(side), self, side, bbWithoutPin))
+        if numOfAttacksWithPin < numOfAttacksWithoutPin:
+            return True
+        else:
+            return False
 
 
 class Undo:

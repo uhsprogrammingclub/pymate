@@ -111,21 +111,25 @@ def generatePseudoMoves(state):
     queenSquares = util.getSetBits(side & state.pieceBitBoards[board.QUEENS])
 
     for index in queenSquares:
-        queenMoves = util.getSetBits(bishopAttacks(index, state) | rookAttacks(index, state) & ~side)
+        queenMoves = util.getSetBits((bishopAttacks(index, state) | rookAttacks(index, state)) & ~side)
         queenMoves = map(lambda x: (util.asCoord(index), util.asCoord(x)), queenMoves)
         moves.extend(map(lambda x: board.Move(fromSqr=x[0], toSqr=x[1]), queenMoves))
 
     return moves
 
 
-def rookAttacks(index, state):
-    bbBlockers = state.allPieces() & occupancyMaskRook[index]
+def rookAttacks(index, state=None, consideredPieces=None):
+    if consideredPieces is None:
+        consideredPieces = state.allPieces()
+    bbBlockers = consideredPieces & occupancyMaskRook[index]
     databaseIndex = rshift((bbBlockers * magicNumberRook[index]) & LONG_MASK, magicNumberShiftsRook[index])
     return magicMovesRook[index][databaseIndex]
 
 
-def bishopAttacks(index, state):
-    bbBlockers = state.allPieces() & occupancyMaskBishop[index]
+def bishopAttacks(index, state=None, consideredPieces=None):
+    if consideredPieces is None:
+        consideredPieces = state.allPieces()
+    bbBlockers = consideredPieces & occupancyMaskBishop[index]
     databaseIndex = rshift((bbBlockers * magicNumberBishop[index]) & LONG_MASK, magicNumberShiftsBishop[index])
     return magicMovesBishop[index][databaseIndex]
 
@@ -163,13 +167,16 @@ def pawnAttack(bb, pawnSide, state):
     return (rightAttack | leftAttack) & enemy
 
 
-def attacksTo(pos, state, defendingSide):
+def attacksTo(pos, state, defendingSide, consideredPieces=None):
+    if consideredPieces is None:
+        consideredPieces = state.allPieces()
     pos = util.asIndex(pos)
     enemyBB = state.pieceBitBoards[board.WHITE] if defendingSide == board.Side.B else state.pieceBitBoards[board.BLACK]
+    enemyBB &= consideredPieces
     knights = knightAttacks[pos] & state.pieceBitBoards[board.KNIGHTS]
     kings = kingAttacks[pos] & state.pieceBitBoards[board.KINGS]
-    bishopsQueens = bishopAttacks(pos, state) & (state.pieceBitBoards[board.BISHOPS] | state.pieceBitBoards[board.QUEENS])
-    rooksQueens = rookAttacks(pos, state) & (state.pieceBitBoards[board.ROOKS] | state.pieceBitBoards[board.QUEENS])
+    bishopsQueens = bishopAttacks(pos, state, consideredPieces) & (state.pieceBitBoards[board.BISHOPS] | state.pieceBitBoards[board.QUEENS])
+    rooksQueens = rookAttacks(pos, state, consideredPieces) & (state.pieceBitBoards[board.ROOKS] | state.pieceBitBoards[board.QUEENS])
     pawns = pawnAttack(util.asBit(pos), defendingSide, state) & state.pieceBitBoards[board.PAWNS]
 
     return (knights | kings | bishopsQueens | rooksQueens | pawns) & enemyBB
