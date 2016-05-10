@@ -185,12 +185,16 @@ def attacksTo(pos, state, defendingSide, consideredPieces=None):
 
 
 def generateOccupancyVariations(isRook):
+    
+    bitCount = []
 
     for bitRef in range(64):
         mask = occupancyMaskRook[bitRef] if isRook else occupancyMaskBishop[bitRef]
+
         setBitsInMask = util.getSetBits(mask)
         bitCount = util.countSetBits(mask)
         variationCount = util.asBit(bitCount) & INT_MASK
+
         for i in range(variationCount):
             occupancyVariation[bitRef][i] = 0
 

@@ -2,7 +2,7 @@
 '''
 Created on Mar 22, 2016
 
-@author: Stiven
+@author: Nate and Stiven
 '''
 import util
 import movegenerator
