@@ -247,7 +247,7 @@ class Board:
                 # try the move to see if the move will block the check
                 self.makeMove(move)
                 inCheck = self.isInCheck(sideToMove)
-                self.takeMove(move)
+                self.takeMove()
                 if inCheck:
                     return False
                 else:
@@ -257,8 +257,8 @@ class Board:
             # check that the moving piece is not absolutely pinned
             if not self.isAbsolutePin(fromPos, sideToMove):
                 EPMove = False
-                if self.movingPiece.lower() == "p":
-                    if self.fromSqr[0] != self.toSqr[0] and util.getPieceAtIndex(self, move.toSqr) is None:
+                if util.getPieceAtIndex(self, move.fromSqr).lower() == "p":
+                    if move.fromSqr[0] != move.toSqr[0] and util.getPieceAtIndex(self, move.toSqr) is None:
                         EPMove = True
                 if EPMove is False:
                     return True
@@ -266,7 +266,7 @@ class Board:
             # if piece is pinned, try the move and see if it results in the king being in check
             self.makeMove(move)
             inCheck = self.isInCheck(sideToMove)
-            self.takeMove(move)
+            self.takeMove()
             if inCheck:
                 return False
             else:
@@ -275,7 +275,7 @@ class Board:
     def isAbsolutePin(self, pinnedPiece, side):
         pinnedPiece = util.asIndex(pinnedPiece)
         numOfAttacksWithPin = util.countSetBits(movegenerator.attacksTo(self.kingPos(side), self, side))
-        bbWithoutPin = self.allPieces ^ util.asBit(pinnedPiece)
+        bbWithoutPin = self.allPieces() ^ util.asBit(pinnedPiece)
         numOfAttacksWithoutPin = util.countSetBits(movegenerator.attacksTo(self.kingPos(side), self, side, bbWithoutPin))
         if numOfAttacksWithPin < numOfAttacksWithoutPin:
             return True
