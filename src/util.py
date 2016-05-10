@@ -11,7 +11,7 @@ clearMask = [0] * 64
 
 
 def boardFromFEN(FEN):
-    newBoard = Board()
+    newBoard = board.Board()
     subFEN = FEN.split(" ")
     piecesByRow = subFEN[0].split("/")
     sideToMove = subFEN[1]
@@ -40,7 +40,7 @@ def boardFromFEN(FEN):
                 x += 1
         y -= 1
 
-    newBoard.sideToMove = Side.W if sideToMove == "w" else Side.B
+    newBoard.sideToMove = board.Side.W if sideToMove == "w" else board.Side.B
     for c in castlingRights:
         if c == 'K':
             newBoard.castleRights |= board.WKCA
