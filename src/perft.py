@@ -7,6 +7,7 @@ Created on May 9, 2016
 import unittest
 import movegenerator
 import util
+import board
 from datetime import datetime
 
 
@@ -39,7 +40,6 @@ class TestSequenceFunctions(unittest.TestCase):
             depths = []
             for i in range(len(strSplit) - 1):
                 depths.append(strSplit[i + 1][3:].replace("\n", ""))
-            print depths
 
             b = util.boardFromFEN(FEN)
 
@@ -49,7 +49,7 @@ class TestSequenceFunctions(unittest.TestCase):
                 print b
                 print "Starting Test To Depth:", i
                 self.leafNodes = 0
-                moves = movegenerator.generatePseudoMoves(b)
+                moves = [move for move in movegenerator.generatePseudoMoves(b) if b.isLegalMove(move)]
                 moveNum = 0
                 for move in moves:
                     moveNum += 1
@@ -60,7 +60,7 @@ class TestSequenceFunctions(unittest.TestCase):
                     print "Move:", moveNum, move, self.leafNodes - oldNodes
 
                 print "Leaf nodes: %d, expected: %s" % (self.leafNodes, depths[i - 1])
-                self.assertEqual(depths[i - 1], self.leafNodes, "Depth %d : %s" % (i, FEN))
+                self.assertEqual(int(depths[i - 1]), self.leafNodes, "Depth %d : %s" % (i, FEN))
 
         c = tStart - datetime.now()
         print "PERFT test finished successfully in %d minutes" % c.minutes
