@@ -6,8 +6,15 @@ Created on Mar 29, 2016
 from board import *
 from util import *
 
+# Logical Shift for bits
+
+
+def rshift(val, n): return val >> n if val >= 0 else (val + 0x100000000) >> n
+
 kingAttacks = [0] * 64
 knightAttacks = [0] * 64
+LONG_MASK = 0xFFFFFFFFFFFFFFFF
+INT_MASK = 0xFFFFFFFF
 magicNumberRook = [
     0xa180022080400230, 0x40100040022000, 0x80088020001002, 0x80080280841000, 0x4200042010460008, 0x4800a0003040080, 0x400110082041008, 0x8000a041000880, 0x10138001a080c010, 0x804008200480, 0x10011012000c0, 0x22004128102200, 0x200081201200c, 0x202a001048460004, 0x81000100420004, 0x4000800380004500, 0x208002904001, 0x90004040026008, 0x208808010002001, 0x2002020020704940, 0x8048010008110005, 0x6820808004002200, 0xa80040008023011, 0xb1460000811044, 0x4204400080008ea0, 0xb002400180200184, 0x2020200080100380, 0x10080080100080, 0x2204080080800400, 0xa40080360080, 0x2040604002810b1, 0x8c218600004104, 0x8180004000402000, 0x488c402000401001, 0x4018a00080801004, 0x1230002105001008, 0x8904800800800400, 0x42000c42003810, 0x8408110400b012, 0x18086182000401, 0x2240088020c28000, 0x1001201040c004, 0xa02008010420020, 0x10003009010060, 0x4008008008014, 0x80020004008080, 0x282020001008080, 0x50000181204a0004, 0x102042111804200, 0x40002010004001c0, 0x19220045508200, 0x20030010060a900, 0x8018028040080, 0x88240002008080, 0x10301802830400, 0x332a4081140200, 0x8080010a601241, 0x1008010400021, 0x4082001007241, 0x211009001200509, 0x8015001002441801, 0x801000804000603, 0xc0900220024a401, 0x1000200608243L
 ]
@@ -37,10 +44,9 @@ magicNumberShiftsBishop = [
     59, 59, 59, 59, 59, 59, 59, 59, 58, 59, 59, 59, 59, 59, 59, 58
 ]
 
-magicMovesRook = [[0] * 4096] * 64
-magicMovesBishop = [[0] * 4096] * 64
-occupancyVariation = [[0] * 4096] * 64
-occupancyAttackSet = [[0] * 4096] * 64
+magicMovesRook = [[0 for i in range(4096)] for j in range(64)]
+magicMovesBishop = [[0 for i in range(4096)] for j in range(64)]
+occupancyVariation = [[0 for i in range(4096)] for j in range(64)]
 
 
 def generatePseudoMoves(state):
@@ -83,20 +89,39 @@ def generatePseudoMoves(state):
     rookSquares = getSetBits(side & state.pieceBitBoards[ROOKS])
 
     for index in rookSquares:
-        bbBlockers = state.allPieces() & occupancyMaskRook[index]
-        databaseIndex = int(((bbBlockers * magicNumberRook[index]) & board.FULL_BOARD >> magicNumberShiftsRook[index]) & board.FULL_BOARD)
-        print "rook index", index, "database index", databaseIndex
-        print "len(magicMovesRook), len(magicMovesRook[index])", len(magicMovesRook), len(magicMovesRook[index])
-        rookMoves = magicMovesRook[index][databaseIndex]
-        print "rookMoves BB", bbAsString(rookMoves)
-        rookMoves &= ~side
-        rookMoves = getSetBits(rookMoves)
-        print "rookMoves", rookMoves
+        rookMoves = getSetBits(rookAttacks(index, state) & ~side)
         rookMoves = map(lambda x: (asCoord(index), asCoord(x)), rookMoves)
-
         moves.extend(map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), rookMoves))
 
+    # Bishop Moves
+    bishopSquares = getSetBits(side & state.pieceBitBoards[BISHOPS])
+
+    for index in bishopSquares:
+        bishopMoves = getSetBits(bishopAttacks(index, state) & ~side)
+        bishopMoves = map(lambda x: (asCoord(index), asCoord(x)), bishopMoves)
+        moves.extend(map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), bishopMoves))
+
+    # Queen Moves
+    queenSquares = getSetBits(side & state.pieceBitBoards[QUEENS])
+
+    for index in queenSquares:
+        queenMoves = getSetBits(bishopAttacks(index, state) | rookAttacks(index, state) & ~side)
+        queenMoves = map(lambda x: (asCoord(index), asCoord(x)), queenMoves)
+        moves.extend(map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), queenMoves))
+
     return moves
+
+
+def rookAttacks(index, state):
+    bbBlockers = state.allPieces() & occupancyMaskRook[index]
+    databaseIndex = rshift((bbBlockers * magicNumberRook[index]) & LONG_MASK, magicNumberShiftsRook[index])
+    return magicMovesRook[index][databaseIndex]
+
+
+def bishopAttacks(index, state):
+    bbBlockers = state.allPieces() & occupancyMaskBishop[index]
+    databaseIndex = rshift((bbBlockers * magicNumberBishop[index]) & LONG_MASK, magicNumberShiftsBishop[index])
+    return magicMovesBishop[index][databaseIndex]
 
 
 def pawnPush(bb, state):
@@ -139,7 +164,7 @@ def generateOccupancyVariations(isRook):
         mask = occupancyMaskRook[bitRef] if isRook else occupancyMaskBishop[bitRef]
         setBitsInMask = getSetBits(mask)
         bitCount = countSetBits(mask)
-        variationCount = int(asBit(bitCount))
+        variationCount = asBit(bitCount) & INT_MASK
         for i in range(variationCount):
             occupancyVariation[bitRef][i] = 0
 
@@ -150,74 +175,17 @@ def generateOccupancyVariations(isRook):
             for j in range(len(setBitsInIndex)):
                 occupancyVariation[bitRef][i] |= asBit(setBitsInMask[setBitsInIndex[j]])
 
-            if (isRook):
-                # add up moves to attack set
-                for j in range(bitRef + 8, 64, 8):
-                    if j > 55 or (occupancyVariation[bitRef][i] & asBit(j)) == 0:
-                        break
-                    if (j >= 0 and j <= 63):
-                        occupancyAttackSet[bitRef][i] |= asBit(j)
-
-                # add down moves to attack set
-                for j in range(bitRef - 8, 0, -8):
-                    if j < 8 or (occupancyVariation[bitRef][i] & asBit(j)) == 0:
-                        break
-                    if (j >= 0 and j <= 63):
-                        occupancyAttackSet[bitRef][i] |= asBit(j)
-
-                # add right moves to attack set
-                for j in range(bitRef + 1, 64, 1):
-                    if j % 8 == 7 or j % 8 == 0 or (occupancyVariation[bitRef][i] & asBit(j)) == 0:
-                        break
-                    if (j >= 0 and j <= 63):
-                        occupancyAttackSet[bitRef][i] |= asBit(j)
-
-                # add left moves to attack set
-                for j in range(bitRef - 1, 0, -1):
-                    if j % 8 == 7 or j % 8 == 0 or (occupancyVariation[bitRef][i] & asBit(j)) == 0:
-                        break
-                    if (j >= 0 and j <= 63):
-                        occupancyAttackSet[bitRef][i] |= asBit(j)
-
-            else:
-                # add moves up right
-                for j in range(bitRef + 9, 64, 9):
-                    if j % 8 == 7 or j % 8 == 0 or (occupancyVariation[bitRef][i] & asBit(j)) == 0:
-                        break
-                    if (j >= 0 and j <= 63):
-                        occupancyAttackSet[bitRef][i] |= asBit(j)
-
-                # add moves down left
-                for j in range(bitRef - 9, 0, -9):
-                    if j % 8 == 7 or j % 8 == 0 or (occupancyVariation[bitRef][i] & asBit(j)) == 0:
-                        break
-                    if (j >= 0 and j <= 63):
-                        occupancyAttackSet[bitRef][i] |= asBit(j)
-
-                # add moves up left
-                for j in range(bitRef + 7, 64, 7):
-                    if j % 8 == 7 or j % 8 == 0 or (occupancyVariation[bitRef][i] & asBit(j)) == 0:
-                        break
-                    if (j >= 0 and j <= 63):
-                        occupancyAttackSet[bitRef][i] |= asBit(j)
-
-                # add moves down right
-                for j in range(bitRef - 7, 0, -7):
-                    if j % 8 == 7 or j % 8 == 0 or (occupancyVariation[bitRef][i] & asBit(j)) == 0:
-                        break
-                    if (j >= 0 and j <= 63):
-                        occupancyAttackSet[bitRef][i] |= asBit(j)
-
 
 def generateMoveDatabase(isRook):
     for bitRef in range(64):
         bitCount = countSetBits(occupancyMaskRook[bitRef]) if isRook else countSetBits(occupancyMaskBishop[bitRef])
-        variations = int(asBit(bitCount))
+        variations = asBit(bitCount) & INT_MASK
 
         for i in range(variations):
             validMoves = 0
             if (isRook):
-                magicIndex = int((occupancyVariation[bitRef][i] * magicNumberRook[bitRef]) & board.FULL_BOARD >> magicNumberShiftsRook[bitRef])
+
+                magicIndex = rshift((occupancyVariation[bitRef][i] * magicNumberRook[bitRef]) & LONG_MASK, magicNumberShiftsRook[bitRef])
                 # add Moves up
                 for j in range(bitRef + 8, 64, 8):
                     validMoves |= asBit(j)
@@ -249,7 +217,7 @@ def generateMoveDatabase(isRook):
                 magicMovesRook[bitRef][magicIndex] = validMoves
 
             else:
-                magicIndex = int((occupancyVariation[bitRef][i] * magicNumberBishop[bitRef]) & board.FULL_BOARD >> magicNumberShiftsBishop[bitRef])
+                magicIndex = rshift((occupancyVariation[bitRef][i] * magicNumberBishop[bitRef]) & LONG_MASK, magicNumberShiftsBishop[bitRef])
 
                 # add moves up right
                 for j in range(bitRef + 9, 64, 9):
