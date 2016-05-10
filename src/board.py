@@ -5,6 +5,8 @@ Created on Mar 22, 2016
 @author: Stiven
 '''
 import util
+import movegenerator
+
 
 RANK_1 = 0x00000000000000FF
 RANK_8 = 0xFF00000000000000
@@ -178,6 +180,36 @@ class Board:
 
     def allPieces(self):
         return self.pieceBitBoards[WHITE] | self.pieceBitBoards[BLACK]
+
+    def canCastle(self, side, kSide):
+        if self.isInCheck(side):
+            return False
+
+        allBB = self.allPieces()
+
+        if side == Side.W and (self.castleRights & WKCA) != 0 and kSide:
+            if (allBB & 0x60) != 0 or movegenerator.attacksTo(5, self, side) != 0 or movegenerator.attacksTo(6, self, side) != 0:
+                return False
+            return True
+        elif side == Side.B and (self.castleRights & BKCA) != 0 and kSide:
+            if (allBB & 0x6000000000000000) != 0 or movegenerator.attacksTo(61, self, side) != 0 or movegenerator.attacksTo(62, self, side) != 0:
+                return False
+            return True
+        elif side == Side.W and (self.castleRights & WQCA) != 0 and not kSide:
+            if (allBB & 0xE) != 0 or movegenerator.attacksTo(3, self, side) != 0 or movegenerator.attacksTo(2, self, side) != 0:
+                return False
+            return True
+        elif side == Side.B and (self.castleRights & BKCA) != 0 and not kSide:
+            if (allBB & 0xE00000000000000) != 0 or movegenerator.attacksTo(59, self, side) != 0 or movegenerator.attacksTo(58, self, side) != 0:
+                return False
+            return True
+
+    def isInCheck(self, side):
+        friendlyBB = self.pieceBitBoards[WHITE] if side == Side.W else self.pieceBitBoards[BLACK]
+        if movegenerator.attacksTo(util.lastSetBit(friendlyBB & self.pieceBitBoards[KINGS]), self, side) == 0:
+            return False
+        else:
+            return True
 
 
 class Undo:

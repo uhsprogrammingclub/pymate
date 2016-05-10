@@ -1,8 +1,8 @@
 # encoding=utf8
 import util
-from board import Move
-import board
 import movegenerator
+from board import Move
+#import board
 
 
 def takePlayerMove():

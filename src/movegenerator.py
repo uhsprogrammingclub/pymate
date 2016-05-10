@@ -3,8 +3,8 @@ Created on Mar 29, 2016
 
 @author: Nate
 '''
-from board import *
-from util import *
+import util
+import board
 
 # Logical Shift for bits
 
@@ -54,60 +54,66 @@ def generatePseudoMoves(state):
     Takes input of a board object and returns a list of potential moves
     """
     moves = []
-    side = state.pieceBitBoards[WHITE] if state.sideToMove == Side.W else state.pieceBitBoards[BLACK]
+    side = state.pieceBitBoards[board.WHITE] if state.sideToMove == board.Side.W else state.pieceBitBoards[board.BLACK]
 
     # King Moves
-    kingIndex = lastSetBit(side & state.pieceBitBoards[KINGS])
-    kingMoves = getSetBits(kingAttacks[kingIndex] & ~side)
-    kingMoves = map(lambda x: (asCoord(kingIndex), asCoord(x)), kingMoves)
-    moves.extend(map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), kingMoves))
+    kingIndex = util.lastSetBit(side & state.pieceBitBoards[board.KINGS])
+    kingMoves = util.getSetBits(kingAttacks[kingIndex] & ~side)
+    kingMoves = map(lambda x: (util.asCoord(kingIndex), util.asCoord(x)), kingMoves)
+    moves.extend(map(lambda x: board.Move(fromSqr=x[0], toSqr=x[1]), kingMoves))
+
+    # Castling Moves
+    if state.canCastle(state.sideToMove, True):
+        moves.append(board.Move(fromSqr=util.asCoord(kingIndex), toSqr=util.asCoord(kingIndex + 2)))
+    if state.canCastle(state.sideToMove, False):
+        moves.append(board.Move(fromSqr=util.asCoord(kingIndex), toSqr=util.asCoord(kingIndex - 2)))
 
     # Knight Moves
-    knightSquares = getSetBits(side & state.pieceBitBoards[KNIGHTS])
+    knightSquares = util.getSetBits(side & state.pieceBitBoards[board.KNIGHTS])
 
     for index in knightSquares:
-        knightMoves = getSetBits(knightAttacks[index] & ~side)
-        knightMoves = map(lambda x: (asCoord(index), asCoord(x)), knightMoves)
-        moves.extend(map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), knightMoves))
+        knightMoves = util.getSetBits(knightAttacks[index] & ~side)
+        knightMoves = map(lambda x: (util.asCoord(index), util.asCoord(x)), knightMoves)
+        moves.extend(map(lambda x: board.Move(fromSqr=x[0], toSqr=x[1]), knightMoves))
 
     # Pawn Moves
-    pawnSquares = getSetBits(side & state.pieceBitBoards[PAWNS])
+    pawnSquares = util.getSetBits(side & state.pieceBitBoards[board.PAWNS])
     for index in pawnSquares:
-        pawnMoves = getSetBits(pawnPush(asBit(index), state))
-        pawnMoves.extend(getSetBits(pawnAttack(asBit(index), state)))
-        pawnMoves = map(lambda x: (asCoord(index), asCoord(x)), pawnMoves)
+        pawnMoves = util.getSetBits(pawnPush(util.asBit(index), state.sideToMove, state))
+        pawnMoves.extend(util.getSetBits(pawnAttack(util.asBit(index), state.sideToMove, state)))
+        pawnMoves = map(lambda x: (util.asCoord(index), util.asCoord(x)), pawnMoves)
         for x in pawnMoves:
             if x[1][1] != 0 and x[1][1] != 7:
-                moves.append(Move(fromSqr=x[0], toSqr=x[1]))
+                moves.append(board.Move(fromSqr=x[0], toSqr=x[1]))
             else:
-                moves.append(Move(fromSqr=x[0], toSqr=x[1], promotion='q'))
-                moves.append(Move(fromSqr=x[0], toSqr=x[1], promotion='n'))
-                moves.append(Move(fromSqr=x[0], toSqr=x[1], promotion='r'))
-                moves.append(Move(fromSqr=x[0], toSqr=x[1], promotion='b'))
+                moves.append(board.Move(fromSqr=x[0], toSqr=x[1], promotion='q'))
+                moves.append(board.Move(fromSqr=x[0], toSqr=x[1], promotion='n'))
+                moves.append(board.Move(fromSqr=x[0], toSqr=x[1], promotion='r'))
+                moves.append(board.Move(fromSqr=x[0], toSqr=x[1], promotion='b'))
 
     # Rook Moves
-    rookSquares = getSetBits(side & state.pieceBitBoards[ROOKS])
+    rookSquares = util.getSetBits(side & state.pieceBitBoards[board.ROOKS])
 
     for index in rookSquares:
-        rookMoves = getSetBits(rookAttacks(index, state) & ~side)
-        rookMoves = map(lambda x: (asCoord(index), asCoord(x)), rookMoves)
-        moves.extend(map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), rookMoves))
+        rookMoves = util.getSetBits(rookAttacks(index, state) & ~side)
+        rookMoves = map(lambda x: (util.asCoord(index), util.asCoord(x)), rookMoves)
+        moves.extend(map(lambda x: board.Move(fromSqr=x[0], toSqr=x[1]), rookMoves))
 
     # Bishop Moves
-    bishopSquares = getSetBits(side & state.pieceBitBoards[BISHOPS])
+    bishopSquares = util.getSetBits(side & state.pieceBitBoards[board.BISHOPS])
 
     for index in bishopSquares:
-        bishopMoves = getSetBits(bishopAttacks(index, state) & ~side)
-        bishopMoves = map(lambda x: (asCoord(index), asCoord(x)), bishopMoves)
-        moves.extend(map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), bishopMoves))
+        bishopMoves = util.getSetBits(bishopAttacks(index, state) & ~side)
+        bishopMoves = map(lambda x: (util.asCoord(index), util.asCoord(x)), bishopMoves)
+        moves.extend(map(lambda x: board.Move(fromSqr=x[0], toSqr=x[1]), bishopMoves))
 
     # Queen Moves
-    queenSquares = getSetBits(side & state.pieceBitBoards[QUEENS])
+    queenSquares = util.getSetBits(side & state.pieceBitBoards[board.QUEENS])
 
     for index in queenSquares:
-        queenMoves = getSetBits(bishopAttacks(index, state) | rookAttacks(index, state) & ~side)
-        queenMoves = map(lambda x: (asCoord(index), asCoord(x)), queenMoves)
-        moves.extend(map(lambda x: Move(fromSqr=x[0], toSqr=x[1]), queenMoves))
+        queenMoves = util.getSetBits(bishopAttacks(index, state) | rookAttacks(index, state) & ~side)
+        queenMoves = map(lambda x: (util.asCoord(index), util.asCoord(x)), queenMoves)
+        moves.extend(map(lambda x: board.Move(fromSqr=x[0], toSqr=x[1]), queenMoves))
 
     return moves
 
@@ -124,10 +130,10 @@ def bishopAttacks(index, state):
     return magicMovesBishop[index][databaseIndex]
 
 
-def pawnPush(bb, state):
+def pawnPush(bb, pawnSide, state):
     moves = 0
-    action = up if state.sideToMove == Side.W else down
-    rank4 = action(RANK_1, 3) if state.sideToMove == Side.W else action(RANK_8, 3)
+    action = util.up if pawnSide == board.Side.W else util.down
+    rank4 = action(board.RANK_1, 3) if pawnSide == board.Side.W else action(board.RANK_8, 3)
     pawns = action(bb) & ~state.allPieces()
     moves |= pawns
     pawns = action(pawns)
@@ -136,50 +142,63 @@ def pawnPush(bb, state):
     return moves
 
 
-def pawnAttack(bb, state):
+def pawnAttack(bb, pawnSide, state):
     rightAttack = 0
     leftAttack = 0
     EPTarget = 0
     if state.EPTarget is not None:
-        EPTarget = asBit(state.EPTarget)
-    if (state.sideToMove == Side.W):
-        enemy = state.pieceBitBoards[BLACK]
-        rightAttack = upRight(bb)
-        leftAttack = upLeft(bb)
-        EPTarget = up(EPTarget)
+        EPTarget = util.asBit(state.EPTarget)
+    if (pawnSide == board.Side.W):
+        enemy = state.pieceBitBoards[board.BLACK]
+        rightAttack = util.upRight(bb)
+        leftAttack = util.upLeft(bb)
+        EPTarget = util.up(EPTarget)
     else:
-        enemy = state.pieceBitBoards[WHITE]
-        rightAttack = downRight(bb)
-        leftAttack = downLeft(bb)
-        EPTarget = down(EPTarget)
+        enemy = state.pieceBitBoards[board.WHITE]
+        rightAttack = util.downRight(bb)
+        leftAttack = util.downLeft(bb)
+        EPTarget = util.down(EPTarget)
     enemy |= EPTarget
 
     return (rightAttack | leftAttack) & enemy
 
 
+def attacksTo(pos, state, defendingSide):
+    pos = util.asIndex(pos)
+    enemyBB = state.pieceBitBoards[board.WHITE] if defendingSide == board.Side.B else state.pieceBitBoards[board.BLACK]
+    knights = knightAttacks[pos] & state.pieceBitBoards[board.KNIGHTS]
+    kings = kingAttacks[pos] & state.pieceBitBoards[board.KINGS]
+    bishopsQueens = bishopAttacks(pos, state) & (state.pieceBitBoards[board.BISHOPS] | state.pieceBitBoards[board.QUEENS])
+    rooksQueens = rookAttacks(pos, state) & (state.pieceBitBoards[board.ROOKS] | state.pieceBitBoards[board.QUEENS])
+    pawns = pawnAttack(util.asBit(pos), defendingSide, state) & state.pieceBitBoards[board.PAWNS]
+
+    return (knights | kings | bishopsQueens | rooksQueens | pawns) & enemyBB
+
 # Generate occupancy variations
+
+
 def generateOccupancyVariations(isRook):
 
     for bitRef in range(64):
         mask = occupancyMaskRook[bitRef] if isRook else occupancyMaskBishop[bitRef]
-        setBitsInMask = getSetBits(mask)
-        bitCount = countSetBits(mask)
-        variationCount = asBit(bitCount) & INT_MASK
+        setBitsInMask = util.getSetBits(mask)
+        bitCount = util.countSetBits(mask)
+        variationCount = util.asBit(bitCount) & INT_MASK
         for i in range(variationCount):
             occupancyVariation[bitRef][i] = 0
 
             # find bits set in index "i" and map them to bits in the 64 bit "occupancyVariation"
 
-            setBitsInIndex = getSetBits(i)  # an array of integers showing which bits are set
+            setBitsInIndex = util.getSetBits(i)  # an array of integers showing which bits are set
 
             for j in range(len(setBitsInIndex)):
-                occupancyVariation[bitRef][i] |= asBit(setBitsInMask[setBitsInIndex[j]])
+                occupancyVariation[bitRef][i] |= util.asBit(setBitsInMask[setBitsInIndex[j]])
 
 
 def generateMoveDatabase(isRook):
     for bitRef in range(64):
-        bitCount = countSetBits(occupancyMaskRook[bitRef]) if isRook else countSetBits(occupancyMaskBishop[bitRef])
-        variations = asBit(bitCount) & INT_MASK
+        bitCount = util.countSetBits(occupancyMaskRook[bitRef]) if isRook else util.countSetBits(occupancyMaskBishop[bitRef])
+        variations = util.asBit(bitCount) & INT_MASK
 
         for i in range(variations):
             validMoves = 0
@@ -188,30 +207,30 @@ def generateMoveDatabase(isRook):
                 magicIndex = rshift((occupancyVariation[bitRef][i] * magicNumberRook[bitRef]) & LONG_MASK, magicNumberShiftsRook[bitRef])
                 # add Moves up
                 for j in range(bitRef + 8, 64, 8):
-                    validMoves |= asBit(j)
-                    if (occupancyVariation[bitRef][i] & asBit(j)) != 0:
+                    validMoves |= util.asBit(j)
+                    if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
 
                 # add Moves down
                 for j in range(bitRef - 8, 0, -8):
-                    validMoves |= asBit(j)
-                    if (occupancyVariation[bitRef][i] & asBit(j)) != 0:
+                    validMoves |= util.asBit(j)
+                    if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
 
                 # add Moves right
                 for j in range(bitRef + 1, 64):
                     if j % 8 == 0:
                         break
-                    validMoves |= asBit(j)
-                    if (occupancyVariation[bitRef][i] & asBit(j)) != 0:
+                    validMoves |= util.asBit(j)
+                    if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
 
                 # add moves left
                 for j in range(bitRef - 1, 0, -1):
                     if j % 8 == 7:
                         break
-                    validMoves |= asBit(j)
-                    if (occupancyVariation[bitRef][i] & asBit(j)) != 0:
+                    validMoves |= util.asBit(j)
+                    if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
 
                 magicMovesRook[bitRef][magicIndex] = validMoves
@@ -223,32 +242,32 @@ def generateMoveDatabase(isRook):
                 for j in range(bitRef + 9, 64, 9):
                     if j % 8 == 0 or j > 63:
                         break
-                    validMoves |= asBit(j)
-                    if (occupancyVariation[bitRef][i] & asBit(j)) != 0:
+                    validMoves |= util.asBit(j)
+                    if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
 
                 # add moves down left
                 for j in range(bitRef - 9, 0, -9):
                     if j % 8 == 7 or j < 0:
                         break
-                    validMoves |= asBit(j)
-                    if (occupancyVariation[bitRef][i] & asBit(j)) != 0:
+                    validMoves |= util.asBit(j)
+                    if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
 
                 # add moves up left
                 for j in range(bitRef + 7, 64, 7):
                     if j % 8 == 7 or j > 63:
                         break
-                    validMoves |= asBit(j)
-                    if (occupancyVariation[bitRef][i] & asBit(j)) != 0:
+                    validMoves |= util.asBit(j)
+                    if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
 
                 # add moves down right
                 for j in range(bitRef - 7, 0, -7):
                     if j % 8 == 0 or j < 0:
                         break
-                    validMoves |= asBit(j)
-                    if (occupancyVariation[bitRef][i] & asBit(j)) != 0:
+                    validMoves |= util.asBit(j)
+                    if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
 
                 magicMovesBishop[bitRef][magicIndex] = validMoves
@@ -259,16 +278,16 @@ def initPresets():
     Loads initial presets
     """
     for i in range(64):
-        setMask[i] = 1 << i
-        clearMask[i] = ~setMask[i]
-        kingAttack = setMask[i] | util.right(setMask[i]) | util.left(setMask[i])
+        util.setMask[i] = 1 << i
+        util.clearMask[i] = ~util.setMask[i]
+        kingAttack = util.setMask[i] | util.right(util.setMask[i]) | util.left(util.setMask[i])
         kingAttack |= util.up(kingAttack) | util.down(kingAttack)
-        kingAttacks[i] = kingAttack & clearMask[i]
+        kingAttacks[i] = kingAttack & util.clearMask[i]
 
-        l1 = util.left(setMask[i])
-        l2 = util.left(setMask[i], 2)
-        r1 = util.right(setMask[i])
-        r2 = util.right(setMask[i], 2)
+        l1 = util.left(util.setMask[i])
+        l2 = util.left(util.setMask[i], 2)
+        r1 = util.right(util.setMask[i])
+        r2 = util.right(util.setMask[i], 2)
 
         h1 = l2 | r2
         h2 = l1 | r1
