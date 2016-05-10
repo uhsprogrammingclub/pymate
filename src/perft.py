@@ -7,6 +7,7 @@ Created on May 9, 2016
 import unittest
 import movegenerator
 import util
+import board
 from datetime import datetime
 
 
@@ -49,7 +50,7 @@ class TestSequenceFunctions(unittest.TestCase):
                 print b
                 print "Starting Test To Depth:", i
                 self.leafNodes = 0
-                moves = movegenerator.generatePseudoMoves(b)
+                moves = [move for move in movegenerator.generatePseudoMoves(b) if b.isLegalMove(move)]
                 moveNum = 0
                 for move in moves:
                     moveNum += 1
