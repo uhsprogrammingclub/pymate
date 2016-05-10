@@ -4,8 +4,7 @@ Created on Mar 22, 2016
 @author: Stiven
 '''
 import board
-from board import Board
-from board import Side
+from board import *
 
 setMask = [0] * 64
 clearMask = [0] * 64

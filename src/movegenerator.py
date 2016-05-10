@@ -134,12 +134,14 @@ def pawnAttack(bb, state):
 
 # Generate occupancy variations
 def generateOccupancyVariations(isRook):
+    
+    bitCount = []
 
     for bitRef in range(64):
         mask = occupancyMaskRook[bitRef] if isRook else occupancyMaskBishop[bitRef]
         setBitsInMask = getSetBits(mask)
-        bitCount = countSetBits(mask)
-        variationCount = int(asBit(bitCount))
+        bitCount[bitRef] = countSetBits(mask)
+        variationCount = int(asBit(bitCount[bitRef]))
         for i in range(variationCount):
             occupancyVariation[bitRef][i] = 0
 
