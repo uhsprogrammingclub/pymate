@@ -17,7 +17,7 @@ maxDepth = 6
 #legalityChecker = "lazy"
 perftStart = 1
 divideFEN = None
-#divideFEN = "rnb1kbnr/pp1ppppp/8/q1p5/8/3P4/PPPKPPPP/RNBQ1BNR w KQkq - 0 1"
+#divideFEN = "r3k2N/p1ppqpb1/b3pn2/3P4/np2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1"
 
 
 class TestSequenceFunctions(unittest.TestCase):
@@ -56,8 +56,8 @@ class TestSequenceFunctions(unittest.TestCase):
                 if b.isPositionLegal():
                     moveNum += 1
                     self.perftTest(b, maxDepth - 1)
+                    print "Move %d:" % (moveNum), move, self.leafNodes - oldNodes
                 b.takeMove()
-                print "Move:", moveNum, move, self.leafNodes - oldNodes
 
             print "Leaf nodes: %d" % (self.leafNodes), "Finished in %f seconds." % ((time.time() - iStart))
         else:
@@ -101,14 +101,14 @@ class TestSequenceFunctions(unittest.TestCase):
                         if b.isPositionLegal():
                             moveNum += 1
                             self.perftTest(b, i - 1)
-                            print "Move:", moveNum, move, self.leafNodes - oldNodes
+                            print "Move %d:" % (moveNum), move, self.leafNodes - oldNodes
                         b.takeMove()
 
                     print "Leaf nodes: %d, expected: %s" % (self.leafNodes, depths[i - 1]), "Finished in %f seconds." % ((time.time() - iStart))
                     self.assertEqual(int(depths[i - 1]), self.leafNodes, "Depth %d : %s" % (i, FEN))
 
         c = time.time() - tStart
-        print "PERFT test finished successfully in %d minutes" % c / 60
+        print "PERFT test finished successfully in %f minutes" % (int(c) / 60.0)
 
     def perftTest(self, b, depth):
 

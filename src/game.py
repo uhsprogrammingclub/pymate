@@ -9,7 +9,7 @@ def takePlayerMove():
     print "FEN:", util.boardToFEN(gameBoard)
     pseudoMoves = movegenerator.generatePseudoMoves(gameBoard)
     print "Pseudo moves (" + str(len(pseudoMoves)) + "): ", pseudoMoves
-    legalMoves = filter(lambda move: gameBoard.isLegalMove(move), pseudoMoves)
+    legalMoves = filter(lambda move: gameBoard.lazyIsLegalMove(move), pseudoMoves)
     print "Legal moves (" + str(len(legalMoves)) + "): ", legalMoves
     move = input("Enter the next move:")
     if move == "undo":
