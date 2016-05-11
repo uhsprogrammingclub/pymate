@@ -169,6 +169,16 @@ def downLeft(bb):
 
 
 def getPieceAtIndex(gameBoard, index):
+
+    bit = asBit(index)
+    piece = None
+    if (gameBoard.pieceBitBoards[board.WHITE] | gameBoard.pieceBitBoards[board.BLACK]) & bit != 0:
+        for bbIndex in range(board.PAWNS, 8):
+            if gameBoard.pieceBitBoards[bbIndex] & bit != 0:
+                piece = board.pieceStringMap[bbIndex]
+                return piece.upper() if gameBoard.pieceBitBoards[board.WHITE] & bit != 0 else piece
+    return piece
+    """
     bit = asBit(index)
     piece = None
     if gameBoard.pieceBitBoards[board.WHITE] & bit != 0 or gameBoard.pieceBitBoards[board.BLACK] & bit != 0:
@@ -178,6 +188,7 @@ def getPieceAtIndex(gameBoard, index):
         if gameBoard.pieceBitBoards[board.WHITE] & bit != 0:
             piece = piece.upper()
     return piece
+    """
 
 
 def clearBit(bb, index):
