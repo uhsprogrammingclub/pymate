@@ -12,7 +12,7 @@ import util
 import board
 import time
 
-maxDepth = 6
+maxDepth = 4
 #legalityChecker = "normal"
 #legalityChecker = "lazy"
 perftStart = 1
