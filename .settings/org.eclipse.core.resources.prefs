@@ -1,3 +1,5 @@
 eclipse.preferences.version=1
 encoding//src/board.py=utf8
 encoding//src/game.py=utf8
+encoding//src/perft.py=utf8
+encoding//src/profiler.py=utf8

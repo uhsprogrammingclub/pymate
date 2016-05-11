@@ -1,7 +1,8 @@
+# encoding=utf8
 '''
 Created on May 9, 2016
 
-@author: nathanielcorley
+@author: Nate
 '''
 
 import cProfile
