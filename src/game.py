@@ -6,6 +6,7 @@ from board import Move
 
 def takePlayerMove():
     print gameBoard
+    print util.boardToFEN(gameBoard)
     pseudoMoves = movegenerator.generatePseudoMoves(gameBoard)
     print "Pseudo moves (" + str(len(pseudoMoves)) + "): ", pseudoMoves
     legalMoves = filter(lambda move: gameBoard.isLegalMove(move), pseudoMoves)

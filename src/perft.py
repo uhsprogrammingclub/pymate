@@ -71,7 +71,7 @@ class TestSequenceFunctions(unittest.TestCase):
             self.leafNodes += 1
             return
 
-        moves = movegenerator.generatePseudoMoves(b)
+        moves = [move for move in movegenerator.generatePseudoMoves(b) if b.isLegalMove(move)]
 
         for move in moves:
             b.makeMove(move)

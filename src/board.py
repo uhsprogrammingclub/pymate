@@ -237,7 +237,7 @@ class Board:
                 attackingPos = util.lastSetBit(attacksToKing)
 
                 # if a knight is attacking, then king has to move
-                if self.pieceBitBoards[KNIGHTS] & util.toBit(attackingPos) != 0:
+                if self.pieceBitBoards[KNIGHTS] & util.asBit(attackingPos) != 0:
                     return False
 
                 # If its a capture move and the capturing piece is not absolutely pinned, move is legal
