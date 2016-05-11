@@ -9,7 +9,8 @@ import board
 # Logical Shift for bits
 
 
-def rshift(val, n): return val >> n if val >= 0 else (val + 0x100000000) >> n
+def rshift(val, n): 
+    return val >> n if val >= 0 else (val + 0x100000000) >> n
 
 kingAttacks = [0] * 64
 knightAttacks = [0] * 64
@@ -192,9 +193,9 @@ def generateOccupancyVariations(isRook):
 
         setBitsInMask = util.getSetBits(mask)
         bitCount = util.countSetBits(mask)
-        variationCount = util.asBit(bitCount) & INT_MASK
+        variationCount = util.asBit(bitCount)
 
-        for i in range(variationCount):
+        for i in xrange(variationCount):
             occupancyVariation[bitRef][i] = 0
 
             # find bits set in index "i" and map them to bits in the 64 bit "occupancyVariation"
@@ -208,9 +209,9 @@ def generateOccupancyVariations(isRook):
 def generateMoveDatabase(isRook):
     for bitRef in range(64):
         bitCount = util.countSetBits(occupancyMaskRook[bitRef]) if isRook else util.countSetBits(occupancyMaskBishop[bitRef])
-        variations = util.asBit(bitCount) & INT_MASK
+        variations = util.asBit(bitCount)
 
-        for i in range(variations):
+        for i in xrange(variations):
             validMoves = 0
             if (isRook):
 

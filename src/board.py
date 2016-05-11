@@ -40,6 +40,7 @@ class Side:
 class Board:
     def __init__(self):
         self.pieceBitBoards = [0] * 8
+        self.pieceList = [None] * 64
         self.castleRights = 0
         self.EPTarget = None
         self.halfMoveClock = 0
@@ -59,17 +60,18 @@ class Board:
         return string.encode('utf-8')
 
     def asList(self):
-        pieceList = [None] * 64
-        for i in range(64):
-            pieceList[i] = util.getPieceAtIndex(self, i)
-        return pieceList
+        return self.pieceList
+
+    def getPieceAtIndex(self, index):
+        index = util.asIndex(index)
+        return self.pieceList[index]
 
     def makeMove(self, move):
         undo = Undo(move=move, board=self)
         self.history.append(undo)
         self.halfMoveClock += 1
-        move.movingPiece = util.getPieceAtIndex(self, move.fromSqr)
-        move.capturedPiece = util.getPieceAtIndex(self, move.toSqr)
+        move.movingPiece = self.getPieceAtIndex(move.fromSqr)
+        move.capturedPiece = self.getPieceAtIndex(move.toSqr)
         self.movePiece(move.fromSqr, move.toSqr)
         if move.promotion is not None:
             if self.sideToMove == Side.W:
@@ -163,29 +165,34 @@ class Board:
 
     def clearSquare(self, coord):
         coord = util.asIndex(coord)
-        for i in range(8):
-            self.pieceBitBoards[i] &= util.clearMask[coord]
+        piece = self.getPieceAtIndex(coord)
+        if piece is not None:
+            pieceLower = piece.lower()
+            self.pieceBitBoards[pieceBoardMap[pieceLower]] = util.clearBit(self.pieceBitBoards[pieceBoardMap[pieceLower]], coord)
+            if piece == pieceLower:
+                self.pieceBitBoards[BLACK] = util.clearBit(self.pieceBitBoards[BLACK], coord)
+            else:
+                self.pieceBitBoards[WHITE] = util.clearBit(self.pieceBitBoards[WHITE], coord)
+            self.pieceList[coord] = None
 
     def addPiece(self, piece, coord):
         bit = util.asBit(coord)
         self.clearSquare(coord)
-        self.pieceBitBoards[pieceBoardMap[piece.lower()]] |= bit
-        if piece.upper() == piece:
-            self.pieceBitBoards[WHITE] |= bit
-        else:
+        pieceLower = piece.lower()
+        self.pieceBitBoards[pieceBoardMap[pieceLower]] |= bit
+        if pieceLower == piece:
             self.pieceBitBoards[BLACK] |= bit
+        else:
+            self.pieceBitBoards[WHITE] |= bit
+        self.pieceList[util.asIndex(coord)] = piece
 
     def movePiece(self, coordFrom, coordTo):
         coordFrom = util.asIndex(coordFrom)
         coordTo = util.asIndex(coordTo)
-        bitFrom = util.asBit(coordFrom)
-        bitTo = util.asBit(coordTo)
 
-        for i in range(8):
-            self.pieceBitBoards[i] &= util.clearMask[coordTo]
-            if self.pieceBitBoards[i] | bitFrom == self.pieceBitBoards[i]:
-                self.pieceBitBoards[i] &= util.clearMask[coordFrom]
-                self.pieceBitBoards[i] |= bitTo
+        piece = self.getPieceAtIndex(coordFrom)
+        self.clearSquare(coordFrom)
+        self.addPiece(piece, coordTo)
 
     def allPieces(self):
         return self.pieceBitBoards[WHITE] | self.pieceBitBoards[BLACK]

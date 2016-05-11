@@ -7,6 +7,10 @@ import board
 import util
 from itertools import cycle
 
+
+def rshift(val, n):
+    return val >> n if val >= 0 else (val + 0x100000000) >> n
+
 setMask = [0] * 64
 clearMask = [0] * 64
 
@@ -67,14 +71,17 @@ def boardFromFEN(FEN):
                 x += int(piece)
             else:
                 pieceIsUpperCase = piece != piece.lower()
+                index = asIndex((x, y))
+                bit = asBit(index)
+                newBoard.pieceList[index] = piece
                 piece = piece.lower()
                 pieceBoardMap = {'p': board.PAWNS, 'n': board.KNIGHTS, 'b': board.BISHOPS,
                                  'r': board.ROOKS, 'q': board.QUEENS, 'k': board.KINGS}
-                newBoard.pieceBitBoards[pieceBoardMap[piece]] |= asBit((x, y))
+                newBoard.pieceBitBoards[pieceBoardMap[piece]] |= bit
                 if pieceIsUpperCase:
-                    newBoard.pieceBitBoards[board.WHITE] |= asBit((x, y))
+                    newBoard.pieceBitBoards[board.WHITE] |= bit
                 else:
-                    newBoard.pieceBitBoards[board.BLACK] |= asBit((x, y))
+                    newBoard.pieceBitBoards[board.BLACK] |= bit
                 x += 1
         y -= 1
 
@@ -134,7 +141,7 @@ def up(bb, num=1):
 
 
 def down(bb, num=1):
-    return bb >> 8 * num & board.FULL_BOARD
+    return rshift(bb, num * 8)
 
 
 def right(bb, num=1):
@@ -152,7 +159,7 @@ def left(bb, num=1):
     mask = 0
     for i in range(num):
         mask |= board.FILE_BB[7 - i]
-    return bb >> num & ~mask & board.FULL_BOARD
+    return rshift(bb, num) & ~mask
 
 
 def upRight(bb):
@@ -172,14 +179,16 @@ def downLeft(bb):
 
 
 def getPieceAtIndex(gameBoard, index):
-
-    bit = asBit(index)
+    index = asIndex(index)
+    return gameBoard.pieceList[index]
+    '''bit = asBit(index)
     if (gameBoard.pieceBitBoards[board.WHITE] | gameBoard.pieceBitBoards[board.BLACK]) & bit != 0:
         for bbIndex in range(board.PAWNS, 8):
             if gameBoard.pieceBitBoards[bbIndex] & bit != 0:
                 piece = board.pieceStringMap[bbIndex]
                 return piece.upper() if gameBoard.pieceBitBoards[board.WHITE] & bit != 0 else piece
     return None
+    '''
     """
     bit = asBit(index)
     piece = None
@@ -206,20 +215,6 @@ def lastSetBit(x):
     Find the last set bit in a binary value
     """
     return (x & -x).bit_length() - 1
-
-
-def ffs(bb):
-    """
-    Finds the next set bit in the passed bit board (name short for 'find first set')
-    NOTE: Perhaps use gmpy library (4x faster)?
-    """
-    assert bb != 0
-
-    i = 0
-    while (bb % 2) == 0:
-        i += 1
-        bb = bb >> 1
-    return i
 
 
 def getSetBits(bb):
