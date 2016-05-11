@@ -63,10 +63,10 @@ def asIndex(coord):
 
 
 def asBit(coord):
-    if type(coord) == tuple:
-        return asBit(asIndex(coord))
-    elif type(coord) is int:
+    if type(coord) is int:
         return setMask[coord]
+    elif type(coord) == tuple:
+        return asBit(asIndex(coord))
     return coord
 
 
@@ -102,13 +102,19 @@ def down(bb, num=1):
 def right(bb, num=1):
     if num == 0:
         return bb
-    return bb << num & ~(board.FILE_A | right(board.FILE_A, num - 1)) & board.FULL_BOARD
+    mask = 0
+    for i in range(num):
+        mask |= board.FILE_BB[i]
+    return bb << num & ~mask & board.FULL_BOARD
 
 
 def left(bb, num=1):
     if num == 0:
         return bb
-    return bb >> num & ~(board.FILE_H | left(board.FILE_H, num - 1)) & board.FULL_BOARD
+    mask = 0
+    for i in range(num):
+        mask |= board.FILE_BB[7 - i]
+    return bb >> num & ~mask & board.FULL_BOARD
 
 
 def upRight(bb):

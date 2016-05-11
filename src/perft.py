@@ -4,11 +4,19 @@ Created on May 9, 2016
 @author: nathanielcorley
 '''
 
+import cProfile
 import unittest
 import movegenerator
 import util
 import board
-from datetime import datetime
+import time
+
+maxDepth = 6
+legalityChecker = "normal"
+#legalityChecker = "lazy"
+perftStart = 1
+divideFEN = None
+#divideFEN = "rnb1kbnr/pp1ppppp/8/q1p5/8/3P4/PPPKPPPP/RNBQ1BNR w KQkq - 0 1"
 
 
 class TestSequenceFunctions(unittest.TestCase):
@@ -20,50 +28,80 @@ class TestSequenceFunctions(unittest.TestCase):
         self.TEST_LIMIT = 10000
 
     def testPERFT(self):
-        tStart = datetime.now()
+        tStart = time.time()
         filePath = "../tests/perfttests"
         with open(filePath, "r") as ins:
             tests = []
             for line in ins:
                 tests.append(line)
+        tests = tests[(perftStart - 1):]
+        testNum = perftStart - 1
+        if divideFEN is not None:
+            b = util.boardFromFEN(divideFEN)
+            isLegal = b.isLegalMove
+            if legalityChecker == "lazy":
+                isLegal = b.lazyIsLegalMove
+            iStart = time.time()
+            print b
+            print "Divide at depth", maxDepth
+            self.leafNodes = 0
+            moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
+            moveNum = 0
+            for move in moves:
+                moveNum += 1
+                oldNodes = self.leafNodes
+                b.makeMove(move)
+                self.perftTest(b, maxDepth - 1)
+                b.takeMove()
+                print "Move:", moveNum, move, self.leafNodes - oldNodes
 
-        testNum = 0
-        for test in tests:
-            testNum += 1
-            if testNum > self.TEST_LIMIT: 
-                break
-            strSplit = test.split(";")
+            print "Leaf nodes: %d" % (self.leafNodes), "Finished in %f seconds." % ((time.time() - iStart))
+        else:
+            for test in tests:
+                testNum += 1
+                if testNum > self.TEST_LIMIT:
+                    break
+                strSplit = test.split(";")
 
-            # Map array to correct variables
-            FEN = strSplit[0]
+                # Map array to correct variables
+                FEN = strSplit[0]
 
-            depths = []
-            for i in range(len(strSplit) - 1):
-                depths.append(strSplit[i + 1][3:].replace("\n", ""))
+                depths = []
+                for i in range(len(strSplit) - 1):
+                    depths.append(strSplit[i + 1][3:].replace("\n", ""))
 
-            b = util.boardFromFEN(FEN)
+                # b = util.boardFromFEN("rnbqkbnr/pp1ppppp/8/2p5/8/3P4/PPPKPPPP/RNBQ1BNR b KQkq - 0 1")
+                b = util.boardFromFEN(FEN)
 
-            print "\n### Running Test #%d ###\n" % testNum
+                isLegal = b.isLegalMove
+                if legalityChecker == "lazy":
+                    isLegal = b.lazyIsLegalMove
 
-            for i in range(1, len(depths) + 1):
-                print b
-                print "Starting Test To Depth:", i
-                self.leafNodes = 0
-                moves = [move for move in movegenerator.generatePseudoMoves(b) if b.isLegalMove(move)]
-                moveNum = 0
-                for move in moves:
-                    moveNum += 1
-                    oldNodes = self.leafNodes
-                    b.makeMove(move)
-                    self.perftTest(b, i - 1)
-                    b.takeMove()
-                    print "Move:", moveNum, move, self.leafNodes - oldNodes
+                print "\n### Running Test #%d ###\n" % testNum
 
-                print "Leaf nodes: %d, expected: %s" % (self.leafNodes, depths[i - 1])
-                self.assertEqual(int(depths[i - 1]), self.leafNodes, "Depth %d : %s" % (i, FEN))
+                for i in range(1, len(depths) + 1):
+                    if i > maxDepth:
+                        break
+                    # i = 2
+                    iStart = time.time()
+                    print b
+                    print "Starting Test To Depth:", i
+                    self.leafNodes = 0
+                    moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
+                    moveNum = 0
+                    for move in moves:
+                        moveNum += 1
+                        oldNodes = self.leafNodes
+                        b.makeMove(move)
+                        self.perftTest(b, i - 1)
+                        b.takeMove()
+                        print "Move:", moveNum, move, self.leafNodes - oldNodes
 
-        c = tStart - datetime.now()
-        print "PERFT test finished successfully in %d minutes" % c.minutes
+                    print "Leaf nodes: %d, expected: %s" % (self.leafNodes, depths[i - 1]), "Finished in %f seconds." % ((time.time() - iStart))
+                    self.assertEqual(int(depths[i - 1]), self.leafNodes, "Depth %d : %s" % (i, FEN))
+
+        c = time.time() - tStart
+        print "PERFT test finished successfully in %d minutes" % c / 60
 
     def perftTest(self, b, depth):
 
@@ -71,7 +109,11 @@ class TestSequenceFunctions(unittest.TestCase):
             self.leafNodes += 1
             return
 
-        moves = movegenerator.generatePseudoMoves(b)
+        isLegal = b.isLegalMove
+        if legalityChecker == "lazy":
+            isLegal = b.lazyIsLegalMove
+
+        moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
 
         for move in moves:
             b.makeMove(move)
@@ -79,4 +121,5 @@ class TestSequenceFunctions(unittest.TestCase):
             b.takeMove()
 
 if __name__ == '__main__':
+    # cProfile.run('unittest.main()')
     unittest.main()

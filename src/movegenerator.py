@@ -122,7 +122,9 @@ def rookAttacks(index, state=None, consideredPieces=None):
     if consideredPieces is None:
         consideredPieces = state.allPieces()
     bbBlockers = consideredPieces & occupancyMaskRook[index]
+    # print "bbBlockers\n", util.bbAsString(bbBlockers)
     databaseIndex = rshift((bbBlockers * magicNumberRook[index]) & LONG_MASK, magicNumberShiftsRook[index])
+    # print "magicMovesRook", databaseIndex, "\n", util.bbAsString(magicMovesRook[index][databaseIndex])
     return magicMovesRook[index][databaseIndex]
 
 
@@ -137,7 +139,7 @@ def bishopAttacks(index, state=None, consideredPieces=None):
 def pawnPush(bb, pawnSide, state):
     moves = 0
     action = util.up if pawnSide == board.Side.W else util.down
-    rank4 = action(board.RANK_1, 3) if pawnSide == board.Side.W else action(board.RANK_8, 3)
+    rank4 = board.RANK_BB[3] if pawnSide == board.Side.W else board.RANK_BB[4]
     pawns = action(bb) & ~state.allPieces()
     moves |= pawns
     pawns = action(pawns)
@@ -170,7 +172,6 @@ def pawnAttack(bb, pawnSide, state):
 def attacksTo(pos, state, defendingSide, consideredPieces=None):
     if consideredPieces is None:
         consideredPieces = state.allPieces()
-    pos = util.asIndex(pos)
     enemyBB = state.pieceBitBoards[board.WHITE] if defendingSide == board.Side.B else state.pieceBitBoards[board.BLACK]
     enemyBB &= consideredPieces
     knights = knightAttacks[pos] & state.pieceBitBoards[board.KNIGHTS]
@@ -185,7 +186,7 @@ def attacksTo(pos, state, defendingSide, consideredPieces=None):
 
 
 def generateOccupancyVariations(isRook):
-    
+
     bitCount = []
 
     for bitRef in range(64):
@@ -223,7 +224,7 @@ def generateMoveDatabase(isRook):
                         break
 
                 # add Moves down
-                for j in range(bitRef - 8, 0, -8):
+                for j in range(bitRef - 8, -1, -8):
                     validMoves |= util.asBit(j)
                     if (occupancyVariation[bitRef][i] & util.asBit(j)) != 0:
                         break
@@ -237,7 +238,7 @@ def generateMoveDatabase(isRook):
                         break
 
                 # add moves left
-                for j in range(bitRef - 1, 0, -1):
+                for j in range(bitRef - 1, -1, -1):
                     if j % 8 == 7:
                         break
                     validMoves |= util.asBit(j)
@@ -245,6 +246,10 @@ def generateMoveDatabase(isRook):
                         break
 
                 magicMovesRook[bitRef][magicIndex] = validMoves
+
+                # if magicIndex == 1785:
+                    # print "occupancyVariation[", bitRef, "][", i, "]:\n", util.bbAsString(occupancyVariation[bitRef][i])
+                    # print "magicMovesRook[", bitRef, "][", magicIndex, "]:\n", util.bbAsString(magicMovesRook[bitRef][magicIndex])
 
             else:
                 magicIndex = rshift((occupancyVariation[bitRef][i] * magicNumberBishop[bitRef]) & LONG_MASK, magicNumberShiftsBishop[bitRef])
@@ -258,7 +263,7 @@ def generateMoveDatabase(isRook):
                         break
 
                 # add moves down left
-                for j in range(bitRef - 9, 0, -9):
+                for j in range(bitRef - 9, -1, -9):
                     if j % 8 == 7 or j < 0:
                         break
                     validMoves |= util.asBit(j)
@@ -274,7 +279,7 @@ def generateMoveDatabase(isRook):
                         break
 
                 # add moves down right
-                for j in range(bitRef - 7, 0, -7):
+                for j in range(bitRef - 7, -1, -7):
                     if j % 8 == 0 or j < 0:
                         break
                     validMoves |= util.asBit(j)
