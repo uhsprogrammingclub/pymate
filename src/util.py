@@ -16,7 +16,10 @@ def boardToFEN(b):
     # Converting pieces
     FEN = ""
     adjEmpty = 0
-    li = cycle(range(56, 64) + range(55, -1, -1))
+    indeces = []
+    for i in range(8):
+        indeces.extend(range(56 - i * 8, 64 - i * 8))
+    li = cycle(indeces)
     for index in [next(li) for _ in xrange(64)]:
         piece = util.getPieceAtIndex(b, index)
         if piece is not None:
@@ -25,10 +28,10 @@ def boardToFEN(b):
             FEN += piece
         else:
             adjEmpty += 1
-        if index % 8 == 7 and index > 56 or index % 8 == 0 and index < 56:
+        if index % 8 == 7:
             FEN += str(adjEmpty) if adjEmpty > 0 else ""
             adjEmpty = 0
-            FEN += "/" if index != 0 else ""
+            FEN += "/" if index != 7 else ""
     FEN += " w " if b.sideToMove == board.Side.W else " b "
 
     # Castle rights
@@ -37,7 +40,7 @@ def boardToFEN(b):
     for kind in castling:
         FEN += castleReference[kind] if (b.castleRights & kind) != 0 else ""
     FEN += "-" if b.castleRights == 0 else ""
-    
+
     # Move counters
     FEN += " %s " % b.EPTarget if b.EPTarget is not None else " - "
     FEN += "%d %d" % (b.halfMoveClock, b.fullMoveCounter)

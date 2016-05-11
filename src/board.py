@@ -116,6 +116,17 @@ class Board:
             elif move.fromSqr == (7, 7):
                 self.castleRights &= ~BKCA
 
+        if move.capturedPiece == "R":
+            if move.toSqr == (0, 0):
+                self.castleRights &= ~WQCA
+            elif move.toSqr == (7, 0):
+                self.castleRights &= ~WKCA
+        elif move.capturedPiece == "r":
+            if move.toSqr == (0, 7):
+                self.castleRights &= ~BQCA
+            elif move.toSqr == (7, 7):
+                self.castleRights &= ~BKCA
+
         self.sideToMove = Side.other(self.sideToMove)
 
     def takeMove(self):
@@ -201,7 +212,7 @@ class Board:
             if (allBB & 0xE) != 0 or movegenerator.attacksTo(3, self, side) != 0 or movegenerator.attacksTo(2, self, side) != 0:
                 return False
             return True
-        elif side == Side.B and (self.castleRights & BKCA) != 0 and not kSide:
+        elif side == Side.B and (self.castleRights & BQCA) != 0 and not kSide:
             if (allBB & 0xE00000000000000) != 0 or movegenerator.attacksTo(59, self, side) != 0 or movegenerator.attacksTo(58, self, side) != 0:
                 return False
             return True
