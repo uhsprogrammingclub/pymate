@@ -12,7 +12,7 @@ import util
 import board
 import time
 
-maxDepth = 4
+maxDepth = 6
 #legalityChecker = "normal"
 #legalityChecker = "lazy"
 perftStart = 1
@@ -130,5 +130,5 @@ class TestSequenceFunctions(unittest.TestCase):
             b.takeMove()
 
 if __name__ == '__main__':
-    # cProfile.run('unittest.main()')
+    # cProfile.run('unittest.main()', sort='time')
     unittest.main()

@@ -13,6 +13,7 @@ def rshift(val, n): return val >> n if val >= 0 else (val + 0x100000000) >> n
 
 kingAttacks = [0] * 64
 knightAttacks = [0] * 64
+pawnAttacks = [[0] * 64, [0] * 64]
 LONG_MASK = 0xFFFFFFFFFFFFFFFF
 INT_MASK = 0xFFFFFFFF
 magicNumberRook = [
@@ -80,7 +81,7 @@ def generatePseudoMoves(state):
     pawnSquares = util.getSetBits(side & state.pieceBitBoards[board.PAWNS])
     for index in pawnSquares:
         pawnMoves = util.getSetBits(pawnPush(util.asBit(index), state.sideToMove, state))
-        pawnMoves.extend(util.getSetBits(pawnAttack(util.asBit(index), state.sideToMove, state)))
+        pawnMoves.extend(util.getSetBits(pawnAttack(index, state.sideToMove, state)))
         pawnMoves = map(lambda x: (util.asCoord(index), util.asCoord(x)), pawnMoves)
         for x in pawnMoves:
             if x[1][1] != 0 and x[1][1] != 7:
@@ -148,25 +149,22 @@ def pawnPush(bb, pawnSide, state):
     return moves
 
 
-def pawnAttack(bb, pawnSide, state):
-    rightAttack = 0
-    leftAttack = 0
+def pawnAttack(index, pawnSide, state):
     EPTarget = 0
+    attack = 0
     if state.EPTarget is not None:
         EPTarget = util.asBit(state.EPTarget)
     if (pawnSide == board.Side.W):
         enemy = state.pieceBitBoards[board.BLACK]
-        rightAttack = util.upRight(bb)
-        leftAttack = util.upLeft(bb)
+        attack = pawnAttacks[0][index]
         EPTarget = util.up(EPTarget)
     else:
         enemy = state.pieceBitBoards[board.WHITE]
-        rightAttack = util.downRight(bb)
-        leftAttack = util.downLeft(bb)
+        attack = pawnAttacks[1][index]
         EPTarget = util.down(EPTarget)
     enemy |= EPTarget
 
-    return (rightAttack | leftAttack) & enemy
+    return attack & enemy
 
 
 def attacksTo(pos, state, defendingSide, consideredPieces=None):
@@ -178,7 +176,7 @@ def attacksTo(pos, state, defendingSide, consideredPieces=None):
     kings = kingAttacks[pos] & state.pieceBitBoards[board.KINGS]
     bishopsQueens = bishopAttacks(pos, state, consideredPieces) & (state.pieceBitBoards[board.BISHOPS] | state.pieceBitBoards[board.QUEENS])
     rooksQueens = rookAttacks(pos, state, consideredPieces) & (state.pieceBitBoards[board.ROOKS] | state.pieceBitBoards[board.QUEENS])
-    pawns = pawnAttack(util.asBit(pos), defendingSide, state) & state.pieceBitBoards[board.PAWNS]
+    pawns = pawnAttack(pos, defendingSide, state) & state.pieceBitBoards[board.PAWNS]
 
     return (knights | kings | bishopsQueens | rooksQueens | pawns) & enemyBB
 
@@ -295,20 +293,30 @@ def initPresets():
     """
     for i in range(64):
         util.setMask[i] = 1 << i
-        util.clearMask[i] = ~util.setMask[i]
-        kingAttack = util.setMask[i] | util.right(util.setMask[i]) | util.left(util.setMask[i])
+        bit = util.setMask[i]
+        util.clearMask[i] = ~bit
+        kingAttack = bit | util.right(bit) | util.left(bit)
         kingAttack |= util.up(kingAttack) | util.down(kingAttack)
         kingAttacks[i] = kingAttack & util.clearMask[i]
 
-        l1 = util.left(util.setMask[i])
-        l2 = util.left(util.setMask[i], 2)
-        r1 = util.right(util.setMask[i])
-        r2 = util.right(util.setMask[i], 2)
+        l1 = util.left(bit)
+        l2 = util.left(bit, 2)
+        r1 = util.right(bit)
+        r2 = util.right(bit, 2)
 
         h1 = l2 | r2
         h2 = l1 | r1
 
         knightAttacks[i] = util.up(h1) | util.down(h1) | util.up(h2, 2) | util.down(h2, 2)
+
+        # pawn attacks
+        wRightAttack = util.upRight(bit)
+        wLeftAttack = util.upLeft(bit)
+        bRightAttack = util.downRight(bit)
+        bLeftAttack = util.downLeft(bit)
+        pawnAttacks[0][i] = (wRightAttack | wLeftAttack)
+        pawnAttacks[1][i] = (bRightAttack | bLeftAttack)
+
     generateOccupancyVariations(True)
     generateMoveDatabase(True)
     generateOccupancyVariations(False)
