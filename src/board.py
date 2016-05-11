@@ -212,6 +212,12 @@ class Board:
         else:
             return True
 
+    def isPositionLegal(self):
+        if self.isInCheck(Side.other(self.sideToMove)):
+            return False
+        else:
+            return True
+
     def lazyIsLegalMove(self, move):
         sideToMove = self.sideToMove
         self.makeMove(move)
@@ -222,64 +228,64 @@ class Board:
         else:
             return True
 
-    def isLegalMove(self, move):
-        sideToMove = self.sideToMove
-        fromPos = util.asIndex(move.fromSqr)
-        toPos = util.asIndex(move.toSqr)
-        kingPos = self.kingPos(sideToMove)
+    # def isLegalMove(self, move):
+    #     sideToMove = self.sideToMove
+    #     fromPos = util.asIndex(move.fromSqr)
+    #     toPos = util.asIndex(move.toSqr)
+    #     kingPos = self.kingPos(sideToMove)
 
-        # if the king is moving check if the to square is under attack
-        if fromPos == kingPos:
-            if movegenerator.attacksTo(toPos, self, sideToMove, self.allPieces() ^ util.asBit(kingPos)) == 0:
-                return True
-            else:
-                return False
+    # if the king is moving check if the to square is under attack
+    #     if fromPos == kingPos:
+    #         if movegenerator.attacksTo(toPos, self, sideToMove, self.allPieces() ^ util.asBit(kingPos)) == 0:
+    #             return True
+    #         else:
+    #             return False
 
-        else:
+    #     else:
 
-            if self.isInCheck(sideToMove):
+    #         if self.isInCheck(sideToMove):
 
-                # If double check, only the king can move
-                attacksToKing = movegenerator.attacksTo(kingPos, self, sideToMove)
-                if util.countSetBits(attacksToKing) > 1:
-                    return False
-                attackingPos = util.lastSetBit(attacksToKing)
+    # If double check, only the king can move
+    #             attacksToKing = movegenerator.attacksTo(kingPos, self, sideToMove)
+    #             if util.countSetBits(attacksToKing) > 1:
+    #                 return False
+    #             attackingPos = util.lastSetBit(attacksToKing)
 
-                # If its a capture move and the capturing piece is not absolutely pinned, move is legal
-                if attackingPos == toPos and not self.isAbsolutePin(fromPos, sideToMove):
-                    return True
+    # If its a capture move and the capturing piece is not absolutely pinned, move is legal
+    #             if attackingPos == toPos and not self.isAbsolutePin(fromPos, sideToMove):
+    #                 return True
 
-                # if a knight is attacking, then king has to move
-                if self.pieceBitBoards[KNIGHTS] & util.asBit(attackingPos) != 0:
-                    return False
+    # if a knight is attacking, then king has to move
+    #             if self.pieceBitBoards[KNIGHTS] & util.asBit(attackingPos) != 0:
+    #                 return False
 
-                # try the move to see if the move will block the check
-                self.makeMove(move)
-                inCheck = self.isInCheck(sideToMove)
-                self.takeMove()
-                if inCheck:
-                    return False
-                else:
-                    return True
+    # try the move to see if the move will block the check
+    #             self.makeMove(move)
+    #             inCheck = self.isInCheck(sideToMove)
+    #             self.takeMove()
+    #             if inCheck:
+    #                 return False
+    #             else:
+    #                 return True
 
-            else:
-                # check that the moving piece is not absolutely pinned
-                if not self.isAbsolutePin(fromPos, sideToMove):
-                    EPMove = False
-                    if util.getPieceAtIndex(self, move.fromSqr).lower() == "p":
-                        if move.fromSqr[0] != move.toSqr[0] and util.getPieceAtIndex(self, move.toSqr) is None:
-                            EPMove = True
-                    if EPMove is False:
-                        return True
+    #         else:
+    # check that the moving piece is not absolutely pinned
+    #             if not self.isAbsolutePin(fromPos, sideToMove):
+    #                 EPMove = False
+    #                 if util.getPieceAtIndex(self, move.fromSqr).lower() == "p":
+    #                     if move.fromSqr[0] != move.toSqr[0] and util.getPieceAtIndex(self, move.toSqr) is None:
+    #                         EPMove = True
+    #                 if EPMove is False:
+    #                     return True
 
-                # if piece is pinned, try the move and see if it results in the king being in check
-                self.makeMove(move)
-                inCheck = self.isInCheck(sideToMove)
-                self.takeMove()
-                if inCheck:
-                    return False
-                else:
-                    return True
+    # if piece is pinned, try the move and see if it results in the king being in check
+    #             self.makeMove(move)
+    #             inCheck = self.isInCheck(sideToMove)
+    #             self.takeMove()
+    #             if inCheck:
+    #                 return False
+    #             else:
+    #                 return True
 
     def isAbsolutePin(self, pinnedPiece, side):
         pinnedPiece = util.asIndex(pinnedPiece)
