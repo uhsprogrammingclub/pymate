@@ -12,7 +12,7 @@ import board
 import time
 
 maxDepth = 6
-legalityChecker = "normal"
+#legalityChecker = "normal"
 #legalityChecker = "lazy"
 perftStart = 1
 divideFEN = None
@@ -38,20 +38,23 @@ class TestSequenceFunctions(unittest.TestCase):
         testNum = perftStart - 1
         if divideFEN is not None:
             b = util.boardFromFEN(divideFEN)
-            isLegal = b.isLegalMove
-            if legalityChecker == "lazy":
-                isLegal = b.lazyIsLegalMove
+            # isLegal = b.isLegalMove
+            # if legalityChecker == "lazy":
+            #     isLegal = b.lazyIsLegalMove
             iStart = time.time()
             print b
+            print "FEN:", util.boardToFEN(b)
             print "Divide at depth", maxDepth
             self.leafNodes = 0
-            moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
+            #moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
+            moves = movegenerator.generatePseudoMoves(b)
             moveNum = 0
             for move in moves:
-                moveNum += 1
                 oldNodes = self.leafNodes
                 b.makeMove(move)
-                self.perftTest(b, maxDepth - 1)
+                if b.isPositionLegal():
+                    moveNum += 1
+                    self.perftTest(b, maxDepth - 1)
                 b.takeMove()
                 print "Move:", moveNum, move, self.leafNodes - oldNodes
 
@@ -73,9 +76,9 @@ class TestSequenceFunctions(unittest.TestCase):
                 # b = util.boardFromFEN("rnbqkbnr/pp1ppppp/8/2p5/8/3P4/PPPKPPPP/RNBQ1BNR b KQkq - 0 1")
                 b = util.boardFromFEN(FEN)
 
-                isLegal = b.isLegalMove
-                if legalityChecker == "lazy":
-                    isLegal = b.lazyIsLegalMove
+                # isLegal = b.isLegalMove
+                # if legalityChecker == "lazy":
+                #     isLegal = b.lazyIsLegalMove
 
                 print "\n### Running Test #%d ###\n" % testNum
 
@@ -85,17 +88,20 @@ class TestSequenceFunctions(unittest.TestCase):
                     # i = 2
                     iStart = time.time()
                     print b
+                    print "FEN:", util.boardToFEN(b)
                     print "Starting Test To Depth:", i
                     self.leafNodes = 0
-                    moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
+                    # moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
+                    moves = movegenerator.generatePseudoMoves(b)
                     moveNum = 0
                     for move in moves:
-                        moveNum += 1
                         oldNodes = self.leafNodes
                         b.makeMove(move)
-                        self.perftTest(b, i - 1)
+                        if b.isPositionLegal():
+                            moveNum += 1
+                            self.perftTest(b, i - 1)
+                            print "Move:", moveNum, move, self.leafNodes - oldNodes
                         b.takeMove()
-                        print "Move:", moveNum, move, self.leafNodes - oldNodes
 
                     print "Leaf nodes: %d, expected: %s" % (self.leafNodes, depths[i - 1]), "Finished in %f seconds." % ((time.time() - iStart))
                     self.assertEqual(int(depths[i - 1]), self.leafNodes, "Depth %d : %s" % (i, FEN))
@@ -109,15 +115,17 @@ class TestSequenceFunctions(unittest.TestCase):
             self.leafNodes += 1
             return
 
-        isLegal = b.isLegalMove
-        if legalityChecker == "lazy":
-            isLegal = b.lazyIsLegalMove
+        # isLegal = b.isLegalMove
+        # if legalityChecker == "lazy":
+        #     isLegal = b.lazyIsLegalMove
 
-        moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
+        # moves = [move for move in movegenerator.generatePseudoMoves(b) if isLegal(move)]
+        moves = movegenerator.generatePseudoMoves(b)
 
         for move in moves:
             b.makeMove(move)
-            self.perftTest(b, depth - 1)
+            if b.isPositionLegal():
+                self.perftTest(b, depth - 1)
             b.takeMove()
 
 if __name__ == '__main__':
